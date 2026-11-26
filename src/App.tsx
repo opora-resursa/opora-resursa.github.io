@@ -15,12 +15,21 @@ import { CatalogSection } from './components/CatalogSection';
 import { TrackerSection } from './components/TrackerSection';
 import { ModalState, PracticeModal } from './components/PracticeModal';
 import { LocalProfileFooter } from './components/LocalProfileFooter';
-import { PrintSummary } from './components/PrintSummary';
+import {
+  DEFAULT_PRINT_OPTIONS,
+  PrintOptions,
+  PrintPreviewModal,
+  PrintSummary,
+} from './components/PrintSummary';
 import { Toast, ToastData } from './components/Toast';
 
 export function App() {
   const [state, setState] = useState<AppState>(() => loadAppState());
   const [modal, setModal] = useState<ModalState>({ type: 'closed' });
+  const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+  const [printOptions, setPrintOptions] = useState<PrintOptions>(
+    DEFAULT_PRINT_OPTIONS
+  );
   const [onlyRecommended, setOnlyRecommended] = useState(false);
   const [toast, setToast] = useState<ToastData | null>(null);
   const toastIdRef = useRef(0);
@@ -312,7 +321,7 @@ export function App() {
         isDarkHeader={isDarkHeader}
       />
 
-      <main>
+      <main className="no-print">
         <HeroAndStory
           onOpenQuickSos={() => setModal({ type: 'sos-picker' })}
           onNavigate={navigateToSection}
@@ -360,9 +369,18 @@ export function App() {
         state={state}
         onRestoreBackup={handleRestoreBackup}
         onResetAllData={handleResetAllData}
+        onOpenPrintPreview={() => setPrintPreviewOpen(true)}
       />
 
-      <PrintSummary state={state} />
+      <PrintSummary state={state} options={printOptions} />
+
+      <PrintPreviewModal
+        isOpen={printPreviewOpen}
+        state={state}
+        options={printOptions}
+        onChangeOptions={setPrintOptions}
+        onClose={() => setPrintPreviewOpen(false)}
+      />
 
       <PracticeModal
         modal={modal}

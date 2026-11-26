@@ -11,12 +11,14 @@ interface LocalProfileFooterProps {
   state: AppState;
   onRestoreBackup: (jsonString: string) => void;
   onResetAllData: () => void;
+  onOpenPrintPreview: () => void;
 }
 
 export const LocalProfileFooter: React.FC<LocalProfileFooterProps> = ({
   state,
   onRestoreBackup,
   onResetAllData,
+  onOpenPrintPreview,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const resetTimerRef = useRef<number | null>(null);
@@ -133,7 +135,7 @@ export const LocalProfileFooter: React.FC<LocalProfileFooterProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={onOpenPrintPreview}
                 className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[13.5px] font-semibold bg-[#F4EFE6] text-[#1F192E] transition-all duration-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(244,239,230,0.42)] min-h-[44px] cursor-pointer whitespace-nowrap"
               >
                 <Printer className="h-4 w-4 shrink-0" aria-hidden="true" />

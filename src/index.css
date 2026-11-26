@@ -416,17 +416,24 @@ body {
 /* ================= PRINT STYLESHEET ================= */
 @media print {
   @page {
-    margin: 14mm 16mm;
+    margin: 11mm 13mm;
     size: A4 portrait;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   html,
   body {
+    margin: 0 !important;
+    padding: 0 !important;
     background: #ffffff !important;
     background-image: none !important;
     color: #1C1629 !important;
-    font-size: 11pt !important;
-    line-height: 1.45 !important;
+    font-size: 10.5pt !important;
+    line-height: 1.4 !important;
   }
 
   .no-print {
@@ -435,6 +442,8 @@ body {
 
   .print-only {
     display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   tr,
