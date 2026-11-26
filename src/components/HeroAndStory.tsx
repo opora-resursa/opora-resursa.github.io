@@ -607,12 +607,23 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                         'radial-gradient(circle, rgba(252, 249, 243, 0.95) 18%, rgba(228, 238, 247, 0.85) 50%, transparent 76%)',
                     }}
                   />
-                  <img
-                    ref={story2ImgRef}
-                    src="./images/story-restoration.webp"
-                    alt="Иллюстрация восстановления: росток и спокойные волны"
-                    className="relative z-10 w-full h-auto object-contain select-none will-change-transform"
-                  />
+                  <div
+                    className="relative z-10 w-full"
+                    style={{
+                      transform:
+                        'translate3d(calc(var(--mx-norm, 0) * 7px), calc(var(--my-norm, 0) * 6px), 0)',
+                    }}
+                  >
+                    <img
+                      ref={story2ImgRef}
+                      src="./images/story-restoration.webp"
+                      alt="Иллюстрация восстановления: росток и спокойные волны"
+                      className="w-full h-auto object-contain select-none will-change-transform"
+                      style={{
+                        filter: 'drop-shadow(0 8px 20px rgba(82, 59, 125, 0.12))',
+                      }}
+                    />
+                  </div>
                 </div>
               </Reveal>
             </div>
