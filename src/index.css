@@ -404,12 +404,207 @@ body {
   animation: ambient-breathe 8s ease-in-out infinite;
 }
 
+@keyframes stepSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.step-slide-in {
+  animation: stepSlideIn 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes radarPop {
+  from {
+    opacity: 0;
+    transform: scale(0.84);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.radar-pop {
+  animation: radarPop 540ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes checkRipple {
+  0% {
+    transform: scale(0.84);
+    box-shadow: 0 0 0 0 rgba(82, 59, 125, 0.42);
+  }
+  55% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(82, 59, 125, 0.16);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 11px rgba(82, 59, 125, 0);
+  }
+}
+
+.check-ripple {
+  animation: checkRipple 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes svgLineDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.svg-line-draw {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: svgLineDraw 880ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes shufflePop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.shuffle-pop {
+  animation: shufflePop 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes breathDot {
+  0%,
+  100% {
+    transform: scale(0.85);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+.breath-dot {
+  animation: breathDot 4.5s ease-in-out infinite;
+}
+
+.cursor-spotlight {
+  background: radial-gradient(
+    460px circle at var(--mx, 50%) var(--my, 40%),
+    rgba(139, 176, 212, 0.12),
+    rgba(107, 80, 158, 0.06) 42%,
+    transparent 72%
+  );
+  opacity: var(--spot-opacity, 0);
+  transition: opacity 400ms ease;
+}
+
+/* ================= REVEAL UTILITIES ================= */
+.reveal-base {
+  transition:
+    opacity 780ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 820ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 820ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-slide-up-hidden {
+  opacity: 0;
+  transform: translateY(34px) scale(0.985);
+}
+
+.reveal-slide-up-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.reveal-clip-title-hidden {
+  opacity: 0;
+  transform: translateY(24px) scale(0.988);
+  filter: blur(3px);
+}
+
+.reveal-clip-title-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
+.reveal-figure-rise-hidden {
+  opacity: 0;
+  transform: translateY(30px) scale(0.92);
+  filter: blur(5px);
+}
+
+.reveal-figure-rise-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
+.reveal-rule-draw-hidden {
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.reveal-rule-draw-visible {
+  opacity: 1;
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+.reveal-fade-hidden {
+  opacity: 0;
+}
+
+.reveal-fade-visible {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ambient-breathe,
   .pop-in,
   .gazette-stamp.slam,
-  .animate-fade-in {
+  .animate-fade-in,
+  .step-slide-in,
+  .radar-pop,
+  .check-ripple,
+  .svg-line-draw,
+  .shuffle-pop,
+  .breath-dot {
     animation: none !important;
+  }
+
+  .svg-line-draw {
+    stroke-dashoffset: 0 !important;
+  }
+
+  .cursor-spotlight {
+    transition: none !important;
+    opacity: 0 !important;
+  }
+
+  .reveal-base {
+    transition: none !important;
+  }
+
+  .reveal-slide-up-hidden,
+  .reveal-clip-title-hidden,
+  .reveal-figure-rise-hidden,
+  .reveal-rule-draw-hidden,
+  .reveal-fade-hidden {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
   }
 }
 

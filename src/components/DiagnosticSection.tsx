@@ -146,7 +146,10 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
   const [activeStep, setActiveStep] = useState<number>(0);
   const [isEditingAnswers, setIsEditingAnswers] = useState(false);
   const [planAdded, setPlanAdded] = useState(false);
+  const [animatedAverage, setAnimatedAverage] = useState(0);
   const advanceTimerRef = useRef<number | null>(null);
+  const questionnaireRef = useRef<HTMLDivElement | null>(null);
+  const shouldRestoreFocusRef = useRef(false);
 
   const clearAdvanceTimer = () => {
     if (advanceTimerRef.current !== null) {
@@ -222,6 +225,9 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
 
     if (isEditingAnswers) {
       if (activeStep < QUESTIONS.length - 1) {
+        shouldRestoreFocusRef.current = Boolean(
+          questionnaireRef.current?.contains(document.activeElement)
+        );
         advanceTimerRef.current = window.setTimeout(() => {
           setActiveStep((s) => Math.min(QUESTIONS.length - 1, s + 1));
         }, 220);
@@ -241,6 +247,9 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
         ? firstUnanswered
         : Math.min(QUESTIONS.length - 1, activeStep + 1);
 
+    shouldRestoreFocusRef.current = Boolean(
+      questionnaireRef.current?.contains(document.activeElement)
+    );
     advanceTimerRef.current = window.setTimeout(() => {
       setActiveStep(targetStep);
     }, 220);
@@ -253,11 +262,17 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
 
   const handlePrevStep = () => {
     clearAdvanceTimer();
+    shouldRestoreFocusRef.current = Boolean(
+      questionnaireRef.current?.contains(document.activeElement)
+    );
     setActiveStep((s) => Math.max(0, s - 1));
   };
 
   const handleNextStep = () => {
     clearAdvanceTimer();
+    shouldRestoreFocusRef.current = Boolean(
+      questionnaireRef.current?.contains(document.activeElement)
+    );
     setActiveStep((s) => Math.min(QUESTIONS.length - 1, s + 1));
   };
 
@@ -321,13 +336,103 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
 
   const showQuestionnaire = !result || isEditingAnswers;
 
+  useEffect(() => {
+    if (showQuestionnaire) {
+      setAnimatedAverage(0);
+      return;
+    }
+
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReduced || overallAverage === 0) {
+      setAnimatedAverage(overallAverage);
+      return;
+    }
+
+    let rafId = 0;
+    const duration = 500;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.max(0, Math.min(1, elapsed / duration));
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setAnimatedAverage(Math.round(overallAverage * eased));
+      if (progress < 1) {
+        rafId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    setAnimatedAverage(0);
+    rafId = window.requestAnimationFrame(tick);
+
+    return () => {
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [showQuestionnaire, overallAverage]);
+
+  useEffect(() => {
+    if (!showQuestionnaire || !shouldRestoreFocusRef.current) return;
+    shouldRestoreFocusRef.current = false;
+    const container = questionnaireRef.current;
+    if (
+      container &&
+      (!document.activeElement ||
+        document.activeElement === document.body ||
+        !container.contains(document.activeElement))
+    ) {
+      container.focus({ preventScroll: true });
+    }
+  }, [activeStep, showQuestionnaire]);
+
+  const handleQuestionnaireKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const target = e.target as HTMLElement | null;
+    const isRadio =
+      target?.tagName === 'INPUT' &&
+      (target as HTMLInputElement).type === 'radio';
+
+    if (
+      target &&
+      ((target.tagName === 'INPUT' && !isRadio) ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable)
+    ) {
+      return;
+    }
+
+    if (e.key >= '1' && e.key <= '5') {
+      e.preventDefault();
+      handleSelectAnswer(currentQuestion.id, Number(e.key) - 1);
+      return;
+    }
+
+    if (isRadio) return;
+
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      handlePrevStep();
+      return;
+    }
+
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      handleNextStep();
+    }
+  };
+
   return (
     <section
       id="diagnostics"
       className="no-print relative overflow-x-clip scroll-mt-24 bg-[#EFE8DC]"
     >
-      <div className="max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24 space-y-8">
-        <Reveal>
+      <div className="max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-14 lg:py-20 space-y-8">
+        <Reveal variant="clip-title">
           {/* Newspaper Double-Top Rule Header */}
           <div className="gazette-double-top pt-4 flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-2.5 max-w-3xl">
@@ -340,27 +445,26 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
               </h2>
 
               <p className="type-meta max-w-2xl">
-                Ответьте, ориентируясь на последние две недели работы. Это
-                ориентировочный скрининг нагрузки по 4 направлениям для подбора
-                практик — он не ставит клинических диагнозов.
+                8 вопросов о последних двух неделях — чтобы подобрать практики под
+                вашу зону нагрузки. Не является медицинским диагнозом.
               </p>
             </div>
 
-            <div className="text-left sm:text-right shrink-0">
-              <div className="type-kicker text-[#615875]">
-                {result && !isEditingAnswers ? 'Общий показатель' : 'Прогресс оценки'}
+            {result && !isEditingAnswers && (
+              <div className="text-left sm:text-right shrink-0">
+                <div className="type-kicker text-[#615875]">
+                  Общий показатель
+                </div>
+                <div className="font-num text-3xl grad-text leading-none mt-1 tabular-nums">
+                  НАГРУЗКА {animatedAverage}%
+                </div>
               </div>
-              <div className="font-num text-3xl grad-text leading-none mt-1">
-                {result && !isEditingAnswers
-                  ? `НАГРУЗКА ${overallAverage}%`
-                  : `${answeredCount} / ${QUESTIONS.length}`}
-              </div>
-            </div>
+            )}
           </div>
         </Reveal>
 
         {/* Main Editorial Sheet with Refined Outer Frame & Soft Spotlight */}
-        <Reveal delayMs={60}>
+        <Reveal variant="slide-up" delayMs={80}>
           <div className="relative">
             <div
               aria-hidden="true"
@@ -384,7 +488,12 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
               <div className="rounded-[20px] border border-[#523B7D]/10 bg-[#FCF9F3] p-5 sm:p-8 lg:p-10">
                 {showQuestionnaire ? (
                   /* COMPACT 1-BLOCK STEP-BY-STEP QUESTIONNAIRE */
-                  <div className="space-y-7">
+                  <div
+                    ref={questionnaireRef}
+                    tabIndex={-1}
+                    onKeyDown={handleQuestionnaireKeyDown}
+                    className="space-y-7 outline-none"
+                  >
                     {/* Top Progress & Clickable 01..08 Step Rail */}
                     <div className="pb-5 border-b border-[#1C1629]/12 flex flex-wrap items-center justify-between gap-4">
                       <div
@@ -435,7 +544,7 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                     {/* Single Focused Question View (Fits Comfortably in 1 Block) */}
                     <fieldset
                       key={currentQuestion.id}
-                      className="space-y-6 pl-4 sm:pl-6 border-l-[3px] transition-colors duration-200"
+                      className="step-slide-in space-y-6 pl-4 sm:pl-6 border-l-[3px] transition-colors duration-200"
                       style={{
                         borderLeftColor:
                           currentSelected !== undefined
@@ -482,7 +591,7 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                           return (
                             <label
                               key={opt.value}
-                              className={`flex items-center justify-center text-center rounded-xl px-3 py-3 text-[13.5px] sm:text-[14px] font-medium cursor-pointer min-h-[48px] leading-tight select-none transition-all duration-200 ${
+                              className={`flex items-center justify-center text-center rounded-xl px-3 py-3 text-[13.5px] sm:text-[14px] font-medium cursor-pointer min-h-[48px] leading-tight select-none transition-all duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#523B7D] has-[:focus-visible]:ring-offset-2 ${
                                 isChecked
                                   ? 'btn-violet shadow-[0_6px_16px_-3px_rgba(82,59,125,0.45)]'
                                   : 'bg-[#FCF9F3]/60 text-[#312945] hover:bg-[#FCF9F3] hover:text-[#523B7D] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(28,22,41,0.08)]'
@@ -498,7 +607,19 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                                 }
                                 className="sr-only"
                               />
-                              <span>{opt.label}</span>
+                              <span className="inline-flex items-center gap-1.5">
+                                <span
+                                  aria-hidden="true"
+                                  className={`hidden sm:inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-gazette-mono ${
+                                    isChecked
+                                      ? 'bg-white/15 text-[#FAF6EE]'
+                                      : 'bg-[#1C1629]/6 text-[#615875]'
+                                  }`}
+                                >
+                                  {opt.value + 1}
+                                </span>
+                                <span>{opt.label}</span>
+                              </span>
                             </label>
                           );
                         })}
@@ -517,7 +638,7 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                         <span>Предыдущий</span>
                       </button>
 
-                      {isEditingAnswers ? (
+                      {isEditingAnswers && (
                         <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
@@ -535,10 +656,6 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                             <span>Обновить результат</span>
                           </button>
                         </div>
-                      ) : (
-                        <span className="type-micro text-[#615875] hidden sm:inline">
-                          После выбора ответа открывается следующий вопрос
-                        </span>
                       )}
 
                       <button
@@ -570,12 +687,12 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                           <span className="type-kicker text-[#615875]">
                             Профиль нагрузки (0–100%)
                           </span>
-                          <span className="gazette-stamp text-[#523B7D]">
-                            Нагрузка {overallAverage}%
+                          <span className="gazette-stamp text-[#523B7D] tabular-nums">
+                            Нагрузка {animatedAverage}%
                           </span>
                         </div>
 
-                        <div className="relative z-10 w-full flex justify-center">
+                        <div className="radar-pop relative z-10 w-full flex justify-center">
                           <FourAxisRadarChart scores={result.scores} />
                         </div>
                       </div>
@@ -685,12 +802,16 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                          {recommendedMethods.map((method) => (
+                          {recommendedMethods.map((method, idx) => (
                             <button
                               key={method.id}
                               type="button"
                               onClick={() => onOpenMethod(method)}
-                              className="group text-left p-4 rounded-xl cursor-pointer bg-[#F7F2E7]/85 border border-[#523B7D]/15 border-l-[3px] border-l-[#523B7D] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#FCF9F3] hover:border-[#523B7D]/45 hover:shadow-[0_10px_24px_-10px_rgba(82,59,125,0.22)]"
+                              style={{
+                                animationDelay: `${idx * 65}ms`,
+                                animationFillMode: 'both',
+                              }}
+                              className="pop-in group text-left p-4 rounded-xl cursor-pointer bg-[#F7F2E7]/85 border border-[#523B7D]/15 border-l-[3px] border-l-[#523B7D] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#FCF9F3] hover:border-[#523B7D]/45 hover:shadow-[0_10px_24px_-10px_rgba(82,59,125,0.22)]"
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5">
                                 <span className="type-kicker text-[#523B7D]">

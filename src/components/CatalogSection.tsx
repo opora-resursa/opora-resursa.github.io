@@ -9,7 +9,9 @@ import {
   FilterX,
   Plus,
   Search,
+  Shuffle,
   Sparkles,
+  X,
 } from 'lucide-react';
 import {
   ClusterId,
@@ -80,6 +82,26 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
   const [selectedEvidence, setSelectedEvidence] = useState<'all' | EvidenceTier>('all');
   const [expandedEvidenceIds, setExpandedEvidenceIds] = useState<Record<number, boolean>>({});
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [randomPauseMethod, setRandomPauseMethod] = useState<RegulationMethod | null>(null);
+  const [shuffleKey, setShuffleKey] = useState(0);
+
+  const quickPausePool = useMemo(
+    () => METHODS.filter((m) => m.durationBucket === '1-3' || m.quickSos),
+    []
+  );
+
+  const pickRandomPause = () => {
+    const pool = quickPausePool.length > 0 ? quickPausePool : METHODS;
+    const candidates =
+      randomPauseMethod && pool.length > 1
+        ? pool.filter((m) => m.id !== randomPauseMethod.id)
+        : pool;
+    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    if (picked) {
+      setRandomPauseMethod(picked);
+      setShuffleKey((k) => k + 1);
+    }
+  };
 
   useEffect(() => {
     setVisibleCount(INITIAL_VISIBLE);
@@ -247,8 +269,8 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
       />
 
       <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-16 space-y-6">
-        <Reveal>
-          {/* Clean Newspaper Double-Top Rule Header (NO 4 giant preset banner tiles) */}
+        <Reveal variant="clip-title">
+          {/* Clean Newspaper Double-Top Rule Header */}
           <div className="gazette-double-top pt-4 flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-2.5 max-w-3xl">
               <span className="type-kicker text-[#3D6A94]">
@@ -258,10 +280,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                 30 МЕТОДИК САМОРЕГУЛЯЦИИ
               </h2>
               <p className="type-meta max-w-2xl">
-                Отфильтруйте практики по задаче, длительности или уровню
-                доказательности. Нажмите «Открыть практику» для интерактивного
-                тренажёра или рабочей формы, либо «+ В трекер», чтобы добавить
-                технику в план недели.
+                Выберите направление, длительность или найдите технику по ситуации.
               </p>
             </div>
 
@@ -273,153 +292,192 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
           </div>
         </Reveal>
 
-        {/* Main Filter Sidebar + 2-Column Method Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[268px_1fr] gap-6 items-start">
-          {/* Left Sticky Filter Card */}
-          <aside className="paper-card p-4 space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto">
-            {/* Search Input */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="catalog-search"
-                className="block type-kicker text-[#615875]"
-              >
-                Поиск по названию или автору
-              </label>
-              <div className="relative">
-                <Search
-                  className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#857C99]"
-                  aria-hidden="true"
-                />
-                <input
-                  id="catalog-search"
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Дыхание, ACT, границы..."
-                  className="w-full rounded-xl pl-10 pr-3 py-2 text-[14.5px] bg-[#F7F2E7] border border-[#1C1629]/18 text-[#1C1629] placeholder:text-[#857C99] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#523B7D] min-h-[42px]"
-                />
-              </div>
-            </div>
-
-            {/* Recommended Toggle */}
-            {recommendedIds.length > 0 && (
-              <div className="rounded-xl p-3 bg-[#ECE6F6] border border-[#CBBEE4]">
-                <label className="flex items-center justify-between gap-3 cursor-pointer select-none">
-                  <span className="flex items-center gap-2 text-[13.5px] font-semibold text-[#38255C]">
-                    <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>Только рекомендованные мне</span>
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={onlyRecommended}
-                    onChange={(e) => onToggleOnlyRecommended(e.target.checked)}
-                    className="h-4 w-4 accent-[#523B7D] rounded cursor-pointer"
-                  />
-                </label>
-              </div>
-            )}
-
-            {/* 4 Cluster Filters with Counts */}
-            <div className="space-y-1.5">
-              <p className="type-kicker text-[#615875]">Направление</p>
-              <div className="space-y-1">
-                {(
-                  [
-                    { id: 'all', label: 'Все методики' },
-                    { id: 'body', label: CLUSTER_META.body.shortLabel },
-                    { id: 'mind', label: CLUSTER_META.mind.shortLabel },
-                    { id: 'boundaries', label: CLUSTER_META.boundaries.shortLabel },
-                    { id: 'resource', label: CLUSTER_META.resource.shortLabel },
-                  ] as const
-                ).map((item) => {
-                  const active = selectedCluster === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setSelectedCluster(item.id)}
-                      className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-[14px] font-medium transition-all duration-150 min-h-[40px] cursor-pointer hover:-translate-y-[1px] ${
-                        active
-                          ? 'btn-violet'
-                          : 'bg-[#F7F2E7] text-[#1C1629] border border-[#1C1629]/11 hover:border-[#CBBEE4] hover:bg-[#ECE6F6]/50'
-                      }`}
-                    >
-                      <span className="text-left">{item.label}</span>
-                      <span
-                        className="font-gazette-mono text-[11.5px]"
-                        style={{ opacity: active ? 0.9 : 0.65 }}
-                      >
-                        {clusterCounts[item.id]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Duration Filter */}
-            <div className="space-y-2">
-              <p className="type-kicker text-[#615875]">Длительность</p>
-              <div className="flex flex-wrap gap-1.5">
-                {DURATION_OPTIONS.map((opt) => {
-                  const active = selectedDuration === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setSelectedDuration(opt.value)}
-                      className={`rounded-xl px-3 py-1.5 text-[13px] font-semibold transition-all duration-150 min-h-[38px] cursor-pointer hover:-translate-y-[1px] ${
-                        active
-                          ? 'btn-violet'
-                          : 'bg-[#F7F2E7] text-[#362E47] border border-[#1C1629]/18 hover:border-[#CBBEE4] hover:bg-[#ECE6F6]/50'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Evidence Tier Filter */}
-            <div className="space-y-2">
-              <p className="type-kicker text-[#615875]">Доказательная база</p>
-              <div className="space-y-1.5">
-                {EVIDENCE_OPTIONS.map((opt) => {
-                  const active = selectedEvidence === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setSelectedEvidence(opt.value)}
-                      className={`w-full text-left rounded-xl px-3 py-2 text-[14px] font-medium transition-all duration-150 min-h-[40px] cursor-pointer hover:-translate-y-[1px] ${
-                        active
-                          ? 'btn-sky'
-                          : 'bg-[#F7F2E7] text-[#1C1629] border border-[#1C1629]/11 hover:border-[#B4CDE4] hover:bg-[#E4EEF7]/60'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="pt-3 flex items-center justify-between text-[13.5px] border-t border-[#1C1629]/11 text-[#615875]">
-              <span className="type-kicker">Найдено: {filteredMethods.length}</span>
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="font-semibold text-[#523B7D] underline underline-offset-4 cursor-pointer transition-opacity hover:opacity-80"
+        {/* Single-Column Layout: Compact Top Filter Bar + 2-Column Method Grid */}
+        <div className="space-y-5">
+          <Reveal variant="slide-up" delayMs={60}>
+            <div className="paper-card p-3.5 sm:p-4 space-y-3">
+              {/* Row 1: Cluster Chips + Profile Filter & Random Pause */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <div
+                  className="flex flex-wrap items-center gap-1.5"
+                  role="group"
+                  aria-label="Направления практик"
                 >
-                  Сбросить
-                </button>
-              )}
-            </div>
-          </aside>
+                  {(
+                    [
+                      { id: 'all', label: 'Все' },
+                      { id: 'body', label: 'Тело' },
+                      { id: 'mind', label: 'Мысли' },
+                      { id: 'boundaries', label: 'Границы' },
+                      { id: 'resource', label: 'Ресурс' },
+                    ] as const
+                  ).map((item) => {
+                    const active = selectedCluster === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setSelectedCluster(item.id)}
+                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold transition-all duration-150 min-h-[36px] cursor-pointer ${
+                          active
+                            ? 'btn-violet'
+                            : 'bg-[#F7F2E7] text-[#362E47] border border-[#1C1629]/12 hover:border-[#CBBEE4] hover:bg-[#ECE6F6]/60'
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        <span
+                          className="font-gazette-mono text-[11px]"
+                          style={{ opacity: active ? 0.9 : 0.65 }}
+                        >
+                          · {clusterCounts[item.id]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-          {/* Right 2-Column Method Grid */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {recommendedIds.length > 0 && (
+                    <button
+                      type="button"
+                      aria-pressed={onlyRecommended}
+                      onClick={() => onToggleOnlyRecommended(!onlyRecommended)}
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold transition-all duration-150 min-h-[36px] cursor-pointer ${
+                        onlyRecommended
+                          ? 'btn-violet'
+                          : 'bg-[#ECE6F6]/85 text-[#38255C] border border-[#CBBEE4] hover:bg-[#ECE6F6]'
+                      }`}
+                    >
+                      <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <span>Только по профилю</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={pickRandomPause}
+                    className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-[13px] font-semibold min-h-[36px] cursor-pointer bg-gradient-to-r from-[#ECE6F6] to-[#E4EEF7] text-[#264A6D] border border-[#B4CDE4] hover:border-[#523B7D]/45 hover:text-[#38255C] hover:shadow-[0_6px_16px_-4px_rgba(61,106,148,0.28)] transition-all duration-150"
+                  >
+                    <Shuffle className="h-3.5 w-3.5 text-[#523B7D] shrink-0" aria-hidden="true" />
+                    <span>Случайная пауза</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 2: Search Input + Compact Selects + Reset */}
+              <div className="pt-2.5 border-t border-[#1C1629]/10 flex flex-wrap items-center gap-2.5">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search
+                    className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#857C99]"
+                    aria-hidden="true"
+                  />
+                  <input
+                    id="catalog-search"
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Поиск: дыхание, ACT, границы..."
+                    aria-label="Поиск по названию, автору или ситуации"
+                    className="w-full rounded-xl pl-10 pr-3 py-2 text-[14px] bg-[#F7F2E7] border border-[#1C1629]/16 text-[#1C1629] placeholder:text-[#857C99] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#523B7D] min-h-[40px]"
+                  />
+                </div>
+
+                <select
+                  aria-label="Длительность практики"
+                  value={selectedDuration}
+                  onChange={(e) =>
+                    setSelectedDuration(e.target.value as 'all' | DurationBucket)
+                  }
+                  className="rounded-xl px-3 py-2 text-[13.5px] font-medium bg-[#F7F2E7] border border-[#1C1629]/16 text-[#1C1629] hover:border-[#CBBEE4] focus:outline-none focus:ring-2 focus:ring-[#523B7D] min-h-[40px] cursor-pointer transition-colors"
+                >
+                  {DURATION_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      Время: {opt.label}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  aria-label="Доказательная база"
+                  value={selectedEvidence}
+                  onChange={(e) =>
+                    setSelectedEvidence(e.target.value as 'all' | EvidenceTier)
+                  }
+                  className="rounded-xl px-3 py-2 text-[13.5px] font-medium bg-[#F7F2E7] border border-[#1C1629]/16 text-[#1C1629] hover:border-[#B4CDE4] focus:outline-none focus:ring-2 focus:ring-[#523B7D] min-h-[40px] cursor-pointer transition-colors"
+                >
+                  {EVIDENCE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      База: {opt.label}
+                    </option>
+                  ))}
+                </select>
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-[13px] font-semibold text-[#523B7D] bg-[#ECE6F6]/65 hover:bg-[#ECE6F6] border border-[#CBBEE4] min-h-[40px] cursor-pointer transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>Сбросить</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Random Pause Invitation Card */}
+          {randomPauseMethod && (
+            <div
+              key={shuffleKey}
+              className="shuffle-pop rounded-2xl p-[1.5px] bg-gradient-to-r from-[#523B7D]/45 via-[#3D6A94]/45 to-[#7A4469]/35 shadow-[0_10px_28px_-12px_rgba(82,59,125,0.22)]"
+            >
+              <div className="rounded-[14.5px] bg-[#FCF9F3] p-4 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+                <div className="space-y-1 min-w-0">
+                  <span className="type-kicker text-[#3D6A94]">
+                    Идея на ближайший перерыв · {randomPauseMethod.durationLabel}
+                  </span>
+                  <h3 className="font-editorial text-[19px] leading-snug text-[#1C1629]">
+                    {randomPauseMethod.shortTitle}
+                  </h3>
+                  <p className="type-micro text-[#615875] truncate">
+                    {randomPauseMethod.situationTag}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onOpenMethod(randomPauseMethod)}
+                    className="btn-violet inline-flex items-center gap-1.5 rounded-xl px-4 py-2 type-pill min-h-[38px] cursor-pointer"
+                  >
+                    <span>Запустить сейчас</span>
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={pickRandomPause}
+                    className="btn-paper inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 type-pill min-h-[38px] cursor-pointer"
+                  >
+                    <Shuffle className="h-3.5 w-3.5 text-[#523B7D]" aria-hidden="true" />
+                    <span>Другую</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRandomPauseMethod(null)}
+                    aria-label="Скрыть карточку случайной паузы"
+                    title="Закрыть"
+                    className="inline-flex items-center justify-center rounded-xl h-[38px] w-[38px] text-[#615875] hover:text-[#1C1629] hover:bg-[#EFE8DC] transition-colors cursor-pointer"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 2-Column Method Grid */}
           <div>
             {filteredMethods.length === 0 ? (
               <div className="paper-card p-10 text-center space-y-4">
@@ -447,23 +505,25 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
             ) : (
               <div className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {visibleMethods.map((method) => {
-                  const clusterMeta = CLUSTER_META[method.cluster];
-                  const evidenceMeta = EVIDENCE_META[method.evidenceTier];
-                  const isRecommended = recommendedIds.includes(method.id);
-                  const isTracked = trackedMethodIds.includes(method.id);
-                  const isEvidenceOpen = Boolean(expandedEvidenceIds[method.id]);
+                  {visibleMethods.map((method, idx) => {
+                    const clusterMeta = CLUSTER_META[method.cluster];
+                    const evidenceMeta = EVIDENCE_META[method.evidenceTier];
+                    const isRecommended = recommendedIds.includes(method.id);
+                    const isTracked = trackedMethodIds.includes(method.id);
+                    const isEvidenceOpen = Boolean(expandedEvidenceIds[method.id]);
 
-                  return (
-                    <article
-                      key={method.id}
-                      className="paper-card paper-card-hover overflow-hidden flex flex-col justify-between"
-                      style={
-                        isRecommended
-                          ? { outline: '2px solid var(--violet)', outlineOffset: '-2px' }
-                          : undefined
-                      }
-                    >
+                    return (
+                      <article
+                        key={method.id}
+                        className="pop-in paper-card paper-card-hover overflow-hidden flex flex-col justify-between"
+                        style={{
+                          ...(isRecommended
+                            ? { outline: '2px solid var(--violet)', outlineOffset: '-2px' }
+                            : {}),
+                          animationDelay: `${Math.min(idx, 5) * 45}ms`,
+                          animationFillMode: 'both',
+                        }}
+                      >
                       <div
                         aria-hidden="true"
                         className="h-[3px] w-full shrink-0"
@@ -582,21 +642,12 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                 {(filteredMethods.length > visibleCount ||
                   (visibleCount > INITIAL_VISIBLE &&
                     filteredMethods.length > INITIAL_VISIBLE)) && (
-                  <div className="rounded-2xl bg-[#FCF9F3]/90 border border-[#523B7D]/18 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <p className="text-[14.5px] font-semibold text-[#1C1629]">
-                        {filteredMethods.length > visibleCount
-                          ? `Показано ${shownCount} из ${filteredMethods.length} методик`
-                          : `Открыты все ${filteredMethods.length} методик`}
-                      </p>
-                      <p className="type-micro text-[#615875]">
-                        {filteredMethods.length > visibleCount
-                          ? 'Раскройте следующие практики или посмотрите весь каталог целиком'
-                          : 'Можно вернуться к компактному виду из 4 карточек'}
-                      </p>
-                    </div>
+                  <div className="rounded-2xl bg-[#FCF9F3]/90 border border-[#523B7D]/18 px-4 py-3.5 sm:px-5 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-[14px] font-semibold text-[#1C1629]">
+                      Показано {shownCount} из {filteredMethods.length}
+                    </p>
 
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
                       {filteredMethods.length > visibleCount && (
                         <>
                           <button
@@ -604,7 +655,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                             onClick={() =>
                               setVisibleCount((prev) => prev + STEP_VISIBLE)
                             }
-                            className="btn-violet inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 type-pill min-h-[42px] cursor-pointer"
+                            className="btn-violet inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 type-pill min-h-[40px] cursor-pointer"
                           >
                             <span>Показать ещё {Math.min(STEP_VISIBLE, remaining)}</span>
                             <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -613,9 +664,9 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                           <button
                             type="button"
                             onClick={() => setVisibleCount(filteredMethods.length)}
-                            className="btn-paper inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 type-pill min-h-[42px] cursor-pointer"
+                            className="btn-paper inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 type-pill min-h-[40px] cursor-pointer"
                           >
-                            <span>Раскрыть все ({filteredMethods.length})</span>
+                            <span>Все {filteredMethods.length}</span>
                           </button>
                         </>
                       )}
@@ -625,10 +676,10 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                           <button
                             type="button"
                             onClick={handleCollapse}
-                            className="btn-paper inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 type-pill min-h-[42px] cursor-pointer"
+                            className="btn-paper inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 type-pill min-h-[40px] cursor-pointer"
                           >
                             <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                            <span>Свернуть до 4 методик</span>
+                            <span>Свернуть</span>
                           </button>
                         )}
                     </div>

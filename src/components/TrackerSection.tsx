@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BatteryCharging,
   CalendarCheck2,
   Check,
+  ChevronDown,
   Edit3,
   HeartHandshake,
   Play,
@@ -65,10 +66,10 @@ const QUICK_PRESETS: QuickPreset[] = [
 ];
 
 const ENERGY_FEELING_PRESETS: { value: number; label: string; shortLabel: string }[] = [
-  { value: 2, label: 'Истощение', shortLabel: 'Нет сил' },
-  { value: 4, label: 'Усталость', shortLabel: 'Устал' },
+  { value: 2, label: 'Нет сил', shortLabel: 'Слабо' },
+  { value: 4, label: 'Устал', shortLabel: 'Мало' },
   { value: 6, label: 'Норма', shortLabel: 'Норма' },
-  { value: 8, label: 'Спокойно', shortLabel: 'Ровно' },
+  { value: 8, label: 'Ровно', shortLabel: 'Ровно' },
   { value: 10, label: 'Опора', shortLabel: 'Опора' },
 ];
 
@@ -132,17 +133,45 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<TrackerTab>('habits');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showPresets, setShowPresets] = useState(false);
   const [newTrigger, setNewTrigger] = useState('');
   const [newAction, setNewAction] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTrigger, setEditTrigger] = useState('');
   const [editAction, setEditAction] = useState('');
   const [selectedDay, setSelectedDay] = useState<number>(todayIndex);
+  const [lastToggledKey, setLastToggledKey] = useState<string | null>(null);
+  const rippleTimerRef = useRef<number | null>(null);
 
   const [good1, setGood1] = useState('');
   const [good2, setGood2] = useState('');
   const [good3, setGood3] = useState('');
   const [savedStampKey, setSavedStampKey] = useState(0);
+
+  useEffect(() => {
+    return () => {
+      if (rippleTimerRef.current !== null) {
+        window.clearTimeout(rippleTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleToggleDay = (habitId: string, dayIdx: number, wasChecked: boolean) => {
+    if (rippleTimerRef.current !== null) {
+      window.clearTimeout(rippleTimerRef.current);
+      rippleTimerRef.current = null;
+    }
+    if (!wasChecked) {
+      setLastToggledKey(`${habitId}-${dayIdx}`);
+      rippleTimerRef.current = window.setTimeout(() => {
+        setLastToggledKey(null);
+        rippleTimerRef.current = null;
+      }, 450);
+    } else {
+      setLastToggledKey(null);
+    }
+    onToggleHabitDay(habitId, dayIdx);
+  };
 
   useEffect(() => {
     setSelectedDay(todayIndex);
@@ -278,9 +307,9 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
       id="tracker"
       className="no-print relative overflow-x-clip scroll-mt-24 bg-[#EFE8DC]"
     >
-      <div className="max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24 space-y-8">
+      <div className="max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-14 lg:py-20 space-y-8">
         {/* Clean Newspaper Double-Top Rule Header */}
-        <Reveal>
+        <Reveal variant="clip-title">
           <div className="gazette-double-top pt-4 flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-2.5 max-w-3xl">
               <span className="type-kicker text-[#523B7D]">
@@ -290,16 +319,15 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                 ТРЕКЕР ВОССТАНОВЛЕНИЯ
               </h2>
               <p className="type-meta max-w-2xl">
-                Формула «если — то» (метод №8) связывает привычный рабочий момент
-                с коротким действием, чтобы не тратить силу воли на вспоминание.
-                Все отметки сохраняются автоматически.
+                Свяжите короткую практику с привычным моментом дня — все отметки
+                сохраняются автоматически.
               </p>
             </div>
           </div>
         </Reveal>
 
         {/* Sleek Double-Lined Editorial Sheet Matching DiagnosticSection */}
-        <Reveal delayMs={60}>
+        <Reveal variant="slide-up" delayMs={70}>
           <div className="relative">
             {/* Soft Balanced Dual Spotlights */}
             <div
@@ -337,13 +365,13 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                     aria-selected={activeTab === 'habits'}
                     aria-controls="tracker-panel-habits"
                     onClick={() => setActiveTab('habits')}
-                    className={`group text-left rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2.5 border ${
+                    className={`group text-left rounded-2xl p-3.5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2 border ${
                       activeTab === 'habits'
                         ? 'border-[#523B7D] bg-gradient-to-br from-[#ECE6F6]/70 via-[#FCF9F3] to-[#E4EEF7]/65 shadow-[0_10px_26px_-8px_rgba(82,59,125,0.26)] ring-1 ring-[#523B7D]/20'
                         : 'border-[#1C1629]/12 bg-[#F7F2E7]/75 hover:border-[#523B7D]/35 hover:bg-[#FCF9F3]'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-[#1C1629]">
                         <CalendarCheck2
                           className={`h-4 w-4 shrink-0 ${
@@ -353,18 +381,21 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                         />
                         <span>Привычки недели</span>
                       </span>
-                      <span className="font-gazette-mono text-[11px] font-semibold text-[#523B7D]">
-                        {weeklyStats.pct}%
-                      </span>
+                      {habits.length > 0 && todayChecked === habits.length ? (
+                        <span className="gazette-stamp slam whitespace-nowrap shrink-0 text-[#523B7D]">
+                          ДЕНЬ ЗАКРЫТ
+                        </span>
+                      ) : (
+                        <span className="font-gazette-mono text-[11px] font-semibold text-[#523B7D]">
+                          {weeklyStats.pct}%
+                        </span>
+                      )}
                     </div>
 
                     <div className="space-y-1.5">
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="text-[13px] font-medium text-[#362E47]">
                           Сегодня: {todayChecked} из {habits.length}
-                        </span>
-                        <span className="type-micro text-[#615875]">
-                          ритм недели
                         </span>
                       </div>
                       <div className="h-1.5 w-full rounded-full overflow-hidden bg-[#E5DDD0]">
@@ -391,7 +422,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                     aria-selected={activeTab === 'energy'}
                     aria-controls="tracker-panel-energy"
                     onClick={() => setActiveTab('energy')}
-                    className={`group text-left rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2.5 border ${
+                    className={`group text-left rounded-2xl p-3.5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2 border ${
                       activeTab === 'energy'
                         ? 'border-[#523B7D] bg-gradient-to-br from-[#E4EEF7]/75 via-[#FCF9F3] to-[#ECE6F6]/65 shadow-[0_10px_26px_-8px_rgba(82,59,125,0.26)] ring-1 ring-[#523B7D]/20'
                         : 'border-[#1C1629]/12 bg-[#F7F2E7]/75 hover:border-[#523B7D]/35 hover:bg-[#FCF9F3]'
@@ -434,7 +465,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                     aria-selected={activeTab === 'evening'}
                     aria-controls="tracker-panel-evening"
                     onClick={() => setActiveTab('evening')}
-                    className={`group text-left rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2.5 border ${
+                    className={`group text-left rounded-2xl p-3.5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2 border ${
                       activeTab === 'evening'
                         ? 'border-[#523B7D] bg-gradient-to-br from-[#ECE6F6]/70 via-[#FCF9F3] to-[#F3E6EE]/60 shadow-[0_10px_26px_-8px_rgba(82,59,125,0.26)] ring-1 ring-[#523B7D]/20'
                         : 'border-[#1C1629]/12 bg-[#F7F2E7]/75 hover:border-[#523B7D]/35 hover:bg-[#FCF9F3]'
@@ -712,13 +743,20 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
 
                                           <button
                                             type="button"
-                                            onClick={() => onToggleHabitDay(habit.id, dayIdx)}
+                                            onClick={() =>
+                                              handleToggleDay(habit.id, dayIdx, checked)
+                                            }
                                             aria-pressed={checked}
                                             aria-label={`${dayLabel}${
                                               isToday ? ' (сегодня)' : ''
                                             }: ${checked ? 'выполнено' : 'не выполнено'}`}
                                             title={`${dayLabel}${isToday ? ' (сегодня)' : ''}`}
                                             className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full inline-flex items-center justify-center transition-all duration-150 cursor-pointer hover:-translate-y-[1px] active:translate-y-0 ${
+                                              checked &&
+                                              lastToggledKey === `${habit.id}-${dayIdx}`
+                                                ? 'check-ripple '
+                                                : ''
+                                            }${
                                               checked
                                                 ? 'btn-violet shadow-[0_4px_14px_rgba(82,59,125,0.38)]'
                                                 : isToday
@@ -748,7 +786,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                     )}
 
                     {/* Clean Bottom Quick-Add Strip */}
-                    <div className="pt-5 mt-2 border-t border-[#1C1629]/10 space-y-4">
+                    <div className="pt-5 mt-2 border-t border-[#1C1629]/10 space-y-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
@@ -761,26 +799,52 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                           }`}
                         >
                           <Plus className="h-4 w-4" aria-hidden="true" />
-                          <span>Добавить своё правило</span>
+                          <span>Добавить правило</span>
                         </button>
 
-                        {availablePresets.map((preset) => (
+                        {availablePresets.length > 0 && (
                           <button
-                            key={preset.methodId}
                             type="button"
-                            onClick={() =>
-                              onAddHabit(preset.trigger, preset.action, preset.methodId)
-                            }
-                            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12.5px] font-medium bg-[#F7F2E7] text-[#362E47] border border-[#1C1629]/14 hover:border-[#8BB0D4] hover:bg-[#E4EEF7]/65 hover:text-[#264A6D] transition-colors cursor-pointer min-h-[38px]"
+                            onClick={() => setShowPresets((prev) => !prev)}
+                            aria-expanded={showPresets}
+                            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-semibold transition-all cursor-pointer min-h-[38px] ${
+                              showPresets
+                                ? 'bg-[#E4EEF7] text-[#264A6D] border border-[#8BB0D4]'
+                                : 'bg-[#F7F2E7] text-[#362E47] border border-[#1C1629]/14 hover:border-[#8BB0D4] hover:bg-[#E4EEF7]/60 hover:text-[#264A6D]'
+                            }`}
                           >
-                            <Plus
-                              className="h-3.5 w-3.5 text-[#3D6A94] shrink-0"
+                            <Sparkles className="h-3.5 w-3.5 text-[#3D6A94]" aria-hidden="true" />
+                            <span>Готовые идеи ({availablePresets.length})</span>
+                            <ChevronDown
+                              className={`h-3.5 w-3.5 transition-transform duration-150 ${
+                                showPresets ? 'rotate-180' : ''
+                              }`}
                               aria-hidden="true"
                             />
-                            <span>{preset.chipLabel}</span>
                           </button>
-                        ))}
+                        )}
                       </div>
+
+                      {showPresets && availablePresets.length > 0 && (
+                        <div className="pop-in flex flex-wrap items-center gap-2 pt-0.5">
+                          {availablePresets.map((preset) => (
+                            <button
+                              key={preset.methodId}
+                              type="button"
+                              onClick={() =>
+                                onAddHabit(preset.trigger, preset.action, preset.methodId)
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12.5px] font-medium bg-[#F7F2E7] text-[#362E47] border border-[#1C1629]/14 hover:border-[#8BB0D4] hover:bg-[#E4EEF7]/65 hover:text-[#264A6D] transition-colors cursor-pointer min-h-[38px]"
+                            >
+                              <Plus
+                                className="h-3.5 w-3.5 text-[#3D6A94] shrink-0"
+                                aria-hidden="true"
+                              />
+                              <span>{preset.chipLabel}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
                       {showAddForm && (
                         <form
@@ -1207,9 +1271,13 @@ const ResourceSparkline: React.FC<{
     .map((v, i) => (v !== null ? { i, x: getX(i), y: getY(v), v } : null))
     .filter((p): p is { i: number; x: number; y: number; v: number } => p !== null);
 
-  const polylineStr = validPoints
-    .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-    .join(' ');
+  const linePath =
+    validPoints.length >= 2
+      ? `M ${validPoints[0].x.toFixed(1)} ${validPoints[0].y.toFixed(1)} ${validPoints
+          .slice(1)
+          .map((p) => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+          .join(' ')}`
+      : '';
 
   const areaPath =
     validPoints.length >= 2
@@ -1307,13 +1375,14 @@ const ResourceSparkline: React.FC<{
       {areaPath && <path d={areaPath} fill="url(#resource-area-grad)" />}
 
       {validPoints.length >= 2 && (
-        <polyline
+        <path
+          d={linePath}
+          className="svg-line-draw"
           fill="none"
           stroke="#3D6A94"
           strokeWidth={2.8}
           strokeLinecap="round"
           strokeLinejoin="round"
-          points={polylineStr}
           filter="url(#sparkline-line-glow)"
         />
       )}

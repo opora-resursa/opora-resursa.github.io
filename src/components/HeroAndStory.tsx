@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowRight, Wind } from 'lucide-react';
-import { Reveal } from './Reveal';
+import { Reveal, useCursorSpotlight, useScrollParallax } from './Reveal';
 import { SectionId } from './TopNavAndRail';
 
 interface HeroAndStoryProps {
@@ -12,17 +12,17 @@ const WHY_STEPS_PART1 = [
   {
     num: '01',
     title: 'Скрытая эмоциональная нагрузка',
-    text: 'Рабочий день состоит не только из профессиональных задач: приходится постоянно сопереживать, сдерживать собственные реакции и выдерживать чужую тревогу.',
+    text: 'Приходится постоянно сопереживать, сдерживать реакции и выдерживать чужую тревогу.',
   },
   {
     num: '02',
     title: 'Тело остаётся в напряжении',
-    text: 'Даже после конца смены плечи и челюсть остаются зажатыми, а мысли продолжают возвращаться к трудным разговорам и рабочим случаям.',
+    text: 'Даже после смены плечи и челюсть зажаты, а мысли возвращаются к рабочим случаям.',
   },
   {
     num: '03',
     title: 'Выходных перестаёт хватать',
-    text: 'Когда расход сил неделями превышает восстановление, пассивный отдых у экрана уже не возвращает чувство бодрости.',
+    text: 'Когда расход сил неделями выше восстановления, пассивный отдых не возвращает бодрость.',
   },
 ];
 
@@ -30,33 +30,40 @@ const WHY_STEPS_PART2 = [
   {
     num: '04',
     title: 'Короткие паузы в течение смены',
-    text: 'Между приёмами, уроками и отчётами нет часа на длинную практику. Снижать напряжение прямо в рабочем ритме помогают техники на 2–5 минут, встроенные в обычный перерыв.',
+    text: 'Техники на 2–5 минут встраиваются в обычный перерыв между приёмами, уроками и отчётами.',
   },
   {
     num: '05',
     title: 'Навык вместо случайных советов',
-    text: 'Разовые рекомендации быстро забываются в спешке. Устойчивый эффект даёт понятная система: заметить зону перегрузки, подобрать подходящую практику и закрепить её как привычку.',
+    text: 'Понятный цикл: заметить зону перегрузки, подобрать практику и закрепить её как привычку.',
   },
 ];
 
-const HERO_ROADMAP: { num: string; title: string; subtitle: string; target: SectionId }[] = [
+type BodyPointId = 'shoulders' | 'jaw' | 'exhale';
+
+const BODY_CHECK_POINTS: {
+  id: BodyPointId;
+  idleLabel: string;
+  doneLabel: string;
+  hint: string;
+}[] = [
   {
-    num: '01 · Оценка (2 мин)',
-    title: 'Экспресс-самооценка',
-    subtitle: 'Покажет, где сейчас выше всего нагрузка',
-    target: 'diagnostics',
+    id: 'shoulders',
+    idleLabel: 'Плечи',
+    doneLabel: '✓ Плечи опущены',
+    hint: 'Опустите плечи на пару сантиметров вниз от ушей.',
   },
   {
-    num: '02 · 30 методик',
-    title: 'Библиотека методик',
-    subtitle: 'Тренажёры дыхания, тела, мыслей и границ',
-    target: 'catalog',
+    id: 'jaw',
+    idleLabel: 'Челюсть',
+    doneLabel: '✓ Челюсть свободна',
+    hint: 'Разомкните зубы и дайте языку спокойно лечь вниз.',
   },
   {
-    num: '03 · Трекер недели',
-    title: 'План восстановления',
-    subtitle: 'Поможет закрепить короткие паузы в графике',
-    target: 'tracker',
+    id: 'exhale',
+    idleLabel: 'Выдох',
+    doneLabel: '✓ Длинный выдох',
+    hint: 'Сделайте один медленный выдох чуть длиннее вдоха.',
   },
 ];
 
@@ -64,6 +71,97 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
   onOpenQuickSos,
   onNavigate,
 }) => {
+  const heroSectionRef = useRef<HTMLElement | null>(null);
+  const story1SectionRef = useRef<HTMLElement | null>(null);
+  const story1StampRef = useRef<HTMLDivElement | null>(null);
+  const heroImgRef = useRef<HTMLImageElement | null>(null);
+  const story1ImgRef = useRef<HTMLImageElement | null>(null);
+  const story2ImgRef = useRef<HTMLImageElement | null>(null);
+
+  const [story1StampVisible, setStory1StampVisible] = useState(false);
+  const [checkedPoints, setCheckedPoints] = useState<
+    Record<BodyPointId, boolean>
+  >({
+    shoulders: false,
+    jaw: false,
+    exhale: false,
+  });
+  const [activePointHint, setActivePointHint] = useState<BodyPointId | null>(
+    null
+  );
+
+  useCursorSpotlight(heroSectionRef);
+  useCursorSpotlight(story1SectionRef);
+  useScrollParallax(heroImgRef, 22);
+  useScrollParallax(story1ImgRef, 26);
+  useScrollParallax(story2ImgRef, 26);
+
+  useEffect(() => {
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const node = story1StampRef.current;
+    if (!node) return;
+
+    const isVisibleNow = () =>
+      node.getBoundingClientRect().top < window.innerHeight * 0.96;
+
+    if (prefersReduced || isVisibleNow()) {
+      setStory1StampVisible(true);
+      return;
+    }
+
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      setStory1StampVisible(true);
+      observer.disconnect();
+      window.removeEventListener('scroll', onScrollCheck);
+    };
+
+    const onScrollCheck = () => {
+      if (isVisibleNow()) reveal();
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            reveal();
+            break;
+          }
+        }
+      },
+      { threshold: 0.01 }
+    );
+
+    observer.observe(node);
+    window.addEventListener('scroll', onScrollCheck, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', onScrollCheck);
+    };
+  }, []);
+
+  const handleTogglePoint = (id: BodyPointId) => {
+    const nextChecked = !checkedPoints[id];
+    setCheckedPoints((prev) => ({ ...prev, [id]: nextChecked }));
+    setActivePointHint(nextChecked ? id : null);
+  };
+
+  const handleResetPoints = () => {
+    setCheckedPoints({ shoulders: false, jaw: false, exhale: false });
+    setActivePointHint(null);
+  };
+
+  const allBodyPointsChecked = BODY_CHECK_POINTS.every(
+    (pt) => checkedPoints[pt.id]
+  );
+  const currentHintText = activePointHint
+    ? BODY_CHECK_POINTS.find((pt) => pt.id === activePointHint)?.hint
+    : undefined;
+
   return (
     <div className="no-print">
       {/* ================================================================= */}
@@ -71,9 +169,14 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
       {/* ================================================================= */}
       <section
         id="top"
+        ref={heroSectionRef}
         className="scroll-mt-24 relative overflow-x-clip bg-[#1F192E] text-[#F4EFE6]"
       >
-        {/* Whisper-quiet radial ambient lighting & ultra-faint vertical hairlines */}
+        {/* Whisper-quiet radial ambient lighting, cursor spotlight & hairlines */}
+        <div
+          aria-hidden="true"
+          className="cursor-spotlight pointer-events-none absolute inset-0 z-0"
+        />
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-32 left-1/4 w-[620px] h-[520px] rounded-full blur-3xl opacity-45"
@@ -95,22 +198,19 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
           className="pointer-events-none max-w-[1220px] mx-auto absolute inset-y-0 inset-x-0 border-x border-[#F4EFE6]/[0.04]"
         />
 
-        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 pt-24 pb-16 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-24">
-          {/* Subtle Newspaper Masthead Hairline Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-1.5 py-2.5 mb-10 sm:mb-14 border-y border-[#F4EFE6]/12 text-center">
-            <span className="sm:text-left font-gazette-mono text-[10px] uppercase tracking-[0.14em] text-[#D6CFE0]/75">
+        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 pt-24 pb-8 sm:pt-28 sm:pb-10 min-h-[86vh] flex flex-col justify-between gap-8">
+          {/* Ultra-Thin Single-Line Masthead Strip */}
+          <div className="flex items-center justify-between gap-4 py-2 border-y border-[#F4EFE6]/12">
+            <span className="font-gazette-mono text-[10px] uppercase tracking-[0.14em] text-[#D6CFE0]/75">
               № 01 · ПСИХОГИГИЕНА
             </span>
-            <span className="font-editorial-italic text-[13px] text-[#F4EFE6]/85">
-              Опора ресурса
-            </span>
-            <span className="sm:text-right font-gazette-mono text-[10px] uppercase tracking-[0.14em] text-[#8BB0D4]/85">
-              30 МЕТОДИК САМОРЕГУЛЯЦИИ
+            <span className="font-gazette-mono text-[10px] uppercase tracking-[0.14em] text-[#8BB0D4]/85">
+              30 МЕТОДИК
             </span>
           </div>
 
           {/* Spacious 2-Column Cover Composition */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center my-auto py-4">
             <div className="lg:col-span-7 space-y-6">
               <div className="type-kicker text-[#8BB0D4]">
                 ДЛЯ ВРАЧЕЙ, ПСИХОЛОГОВ, ПЕДАГОГОВ И СОЦРАБОТНИКОВ
@@ -125,9 +225,9 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                 </p>
               </div>
 
-              <p className="text-[16.5px] leading-[1.65] text-[#D6CFE0] max-w-xl">
-                Короткие техники саморегуляции, экспресс-самооценка состояния и
-                личный трекер восстановления — без регистрации и лишнего шума.
+              <p className="text-[16.5px] leading-[1.6] text-[#D6CFE0] max-w-xl">
+                Короткие техники саморегуляции, самооценка состояния и личный
+                трекер восстановления — без регистрации.
               </p>
 
               {/* 2 Tactile Rounded-xl Buttons Side-by-Side on Desktop */}
@@ -150,65 +250,44 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                   <span>Снять напряжение (2 мин)</span>
                 </button>
               </div>
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => onNavigate('story')}
-                  className="inline-flex items-center gap-2 text-[14px] text-[#D6CFE0]/80 hover:text-[#8BB0D4] cursor-pointer transition-colors"
-                >
-                  <span>Как устроена программа</span>
-                  <ArrowDown className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </div>
             </div>
 
             {/* Right: Large Seamless Illuminated Editorial Figure */}
             <div className="lg:col-span-5 flex items-center justify-center">
-              <div className="relative w-full max-w-[420px] flex items-center justify-center">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-2 rounded-full blur-3xl ambient-breathe"
-                  style={{
-                    background:
-                      'radial-gradient(circle, rgba(139, 176, 212, 0.28) 0%, rgba(107, 80, 158, 0.34) 48%, transparent 74%)',
-                  }}
-                />
-                <img
-                  src="./images/hero-equilibrium.jpg"
-                  alt="Тонкие линии равновесия и ветвь на глубоком фиолетовом фоне"
-                  className="relative z-10 w-full h-auto object-contain editorial-mask select-none"
-                />
-              </div>
+              <Reveal variant="figure-rise" className="w-full max-w-[420px]">
+                <div className="relative w-full flex items-center justify-center">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-2 rounded-full blur-3xl ambient-breathe"
+                    style={{
+                      background:
+                        'radial-gradient(circle, rgba(139, 176, 212, 0.28) 0%, rgba(107, 80, 158, 0.34) 48%, transparent 74%)',
+                    }}
+                  />
+                  <img
+                    ref={heroImgRef}
+                    src="./images/hero-equilibrium.jpg"
+                    alt="Тонкие линии равновесия и ветвь на глубоком фиолетовом фоне"
+                    className="relative z-10 w-full h-auto object-contain editorial-mask select-none will-change-transform"
+                  />
+                </div>
+              </Reveal>
             </div>
           </div>
 
-          {/* 3-Step Roadmap Strip */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-12 pt-8 border-t border-[#F4EFE6]/12">
-            {HERO_ROADMAP.map((item) => (
-              <button
-                key={item.num}
-                type="button"
-                onClick={() => onNavigate(item.target)}
-                className="group bg-[#F4EFE6]/[0.04] border border-[#F4EFE6]/10 rounded-2xl p-4 text-left transition-all hover:border-[#8BB0D4]/55 hover:bg-[#8BB0D4]/[0.08] hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,176,212,0.18)] cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="font-gazette-mono text-[11px] uppercase tracking-[0.11em] text-[#8BB0D4]">
-                    {item.num}
-                  </span>
-                  <ArrowRight
-                    className="w-3.5 h-3.5 text-[#8BB0D4]/70 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[#8BB0D4]"
-                    aria-hidden="true"
-                  />
-                </div>
-                <p className="font-editorial text-[17px] leading-snug text-[#F4EFE6] mb-1">
-                  {item.title}
-                </p>
-                <p className="text-[13.5px] leading-snug text-[#D6CFE0]/90 group-hover:text-[#F4EFE6] transition-colors">
-                  {item.subtitle}
-                </p>
-              </button>
-            ))}
+          {/* Centered Subtle Scroll Invitation */}
+          <div className="flex justify-center pt-2">
+            <button
+              type="button"
+              onClick={() => onNavigate('story')}
+              className="group inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] font-gazette-mono tracking-[0.06em] text-[#D6CFE0]/75 hover:text-[#8BB0D4] cursor-pointer transition-colors"
+            >
+              <span>Листайте дальше</span>
+              <ArrowDown
+                className="w-3.5 h-3.5 text-[#8BB0D4] motion-safe:animate-bounce"
+                aria-hidden="true"
+              />
+            </button>
           </div>
         </div>
       </section>
@@ -218,8 +297,13 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
       {/* ================================================================= */}
       <section
         id="story"
+        ref={story1SectionRef}
         className="scroll-mt-24 on-dark-band relative overflow-x-clip bg-[#261F38] text-[#F4EFE6]"
       >
+        <div
+          aria-hidden="true"
+          className="cursor-spotlight pointer-events-none absolute inset-0 z-0"
+        />
         <div
           aria-hidden="true"
           className="pointer-events-none absolute top-1/3 right-0 w-[520px] h-[520px] rounded-full blur-3xl opacity-35"
@@ -229,12 +313,12 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
           }}
         />
 
-        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-20 lg:py-28">
-          <Reveal>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-              {/* Left: Backlit Editorial Figure */}
-              <div className="lg:col-span-5 order-2 lg:order-1 flex items-center justify-center">
-                <div className="relative w-full max-w-[410px] flex items-center justify-center">
+        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            {/* Left: Backlit Editorial Figure */}
+            <div className="lg:col-span-5 order-2 lg:order-1 flex items-center justify-center">
+              <Reveal variant="figure-rise" className="w-full max-w-[410px]">
+                <div className="relative w-full flex items-center justify-center">
                   <div
                     aria-hidden="true"
                     className="pointer-events-none absolute inset-2 rounded-full blur-3xl ambient-breathe"
@@ -244,64 +328,133 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                     }}
                   />
                   <img
+                    ref={story1ImgRef}
                     src="./images/story-depletion.jpg"
                     alt="Иллюстрация истощения: сосуд с убывающей водой"
-                    className="relative z-10 w-full h-auto object-contain editorial-mask select-none"
+                    className="relative z-10 w-full h-auto object-contain editorial-mask select-none will-change-transform"
                   />
                 </div>
-              </div>
+              </Reveal>
+            </div>
 
-              {/* Right: Double Rule Kicker + Chapter Stamp + Drop-Cap + Steps 01-03 */}
-              <div className="lg:col-span-7 order-1 lg:order-2 space-y-6">
-                <div className="gazette-double-top pt-3 flex flex-wrap items-center justify-between gap-3">
+            {/* Right: Double Rule Kicker + Chapter Stamp + Concise Steps + Body Check */}
+            <div className="lg:col-span-7 order-1 lg:order-2 space-y-5">
+              <div className="space-y-3">
+                <Reveal variant="rule-draw">
+                  <div className="gazette-double-top !pt-0" aria-hidden="true" />
+                </Reveal>
+                <div
+                  ref={story1StampRef}
+                  className="flex flex-wrap items-center justify-between gap-3 pt-1"
+                >
                   <span className="type-kicker text-[#8BB0D4]">
                     Глава 01 · Как накапливается выгорание
                   </span>
-                  <span className="gazette-stamp text-[#8BB0D4]">
+                  <span
+                    className={`gazette-stamp text-[#8BB0D4] ${
+                      story1StampVisible ? 'slam' : 'opacity-0'
+                    }`}
+                  >
                     ПРОБЛЕМА
                   </span>
                 </div>
+              </div>
 
+              <Reveal variant="clip-title">
                 <h2 className="font-gazette-tall text-4xl sm:text-5xl lg:text-[54px] leading-[0.98] text-[#F4EFE6]">
                   ПОЧЕМУ УСТАЛОСТЬ НЕ ПРОХОДИТ ЗА ВЫХОДНЫЕ
                 </h2>
+              </Reveal>
 
-                <p className="font-editorial-body text-[17px] leading-[1.7] text-[#D6CFE0]">
-                  <span className="drop-cap" aria-hidden="true">Е</span>
-                  <span className="sr-only">Е</span>сли к вечеру пятницы кажется, что достаточно просто
-                  выспаться, а в понедельник напряжение возвращается ещё до
-                  первого приёма, дело не в нехватке силы воли. Профессиональное
-                  истощение формируется постепенно через три скрытых механизма.
+              <Reveal variant="fade" delayMs={60}>
+                <p className="font-editorial-body text-[16.5px] leading-[1.6] text-[#D6CFE0]">
+                  Профессиональное истощение копится незаметно — через три
+                  повседневных механизма, которые не снимаются обычным сном.
                 </p>
+              </Reveal>
 
-                <div className="space-y-5 pt-2">
-                  {WHY_STEPS_PART1.map((step) => (
-                    <div
-                      key={step.num}
-                      className="flex items-start gap-4 border-t border-[#F4EFE6]/10 pt-4"
-                    >
+              <div className="space-y-3.5 pt-1">
+                {WHY_STEPS_PART1.map((step, idx) => (
+                  <Reveal
+                    key={step.num}
+                    variant="slide-up"
+                    delayMs={80 * idx}
+                  >
+                    <div className="flex items-start gap-3.5 border-t border-[#F4EFE6]/10 pt-3.5">
                       <span
-                        className="font-gazette-mono text-[13px] font-bold text-[#8BB0D4] shrink-0 mt-0.5 px-2 py-0.5 rounded-md bg-[#8BB0D4]/10 border border-[#8BB0D4]/30"
+                        className="font-gazette-mono text-[12.5px] font-bold text-[#8BB0D4] shrink-0 mt-0.5 px-2 py-0.5 rounded-md bg-[#8BB0D4]/10 border border-[#8BB0D4]/30"
                         style={{
                           boxShadow: '0 0 14px rgba(139, 176, 212, 0.22)',
                         }}
                       >
                         {step.num}
                       </span>
-                      <div className="space-y-1">
-                        <h3 className="font-editorial text-[18px] text-[#F4EFE6]">
-                          {step.title}
-                        </h3>
-                        <p className="text-[15px] leading-[1.6] text-[#D6CFE0]/90">
-                          {step.text}
-                        </p>
-                      </div>
+                      <p className="text-[15px] leading-[1.55] text-[#D6CFE0]/90">
+                        <strong className="font-editorial text-[16.5px] text-[#F4EFE6] mr-1.5">
+                          {step.title}.
+                        </strong>
+                        {step.text}
+                      </p>
                     </div>
-                  ))}
-                </div>
+                  </Reveal>
+                ))}
               </div>
+
+              {/* Tactile Micro-Interactive: 3-Second Body Check */}
+              <Reveal variant="slide-up" delayMs={220}>
+                <div className="mt-2 rounded-2xl bg-[#1F192E]/65 border border-[#F4EFE6]/12 p-4 sm:p-5 space-y-3">
+                  <p className="type-kicker text-[#8BB0D4]">
+                    Прямо сейчас проверьте три точки (нажмите, чтобы отпустить):
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {BODY_CHECK_POINTS.map((pt) => {
+                      const isChecked = checkedPoints[pt.id];
+                      return (
+                        <button
+                          key={pt.id}
+                          type="button"
+                          onClick={() => handleTogglePoint(pt.id)}
+                          aria-pressed={isChecked}
+                          className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-[13.5px] font-medium border transition-all duration-200 cursor-pointer min-h-[38px] ${
+                            isChecked
+                              ? 'bg-[#8BB0D4]/20 border-[#8BB0D4] text-[#F4EFE6] shadow-[0_0_16px_rgba(139,176,212,0.25)]'
+                              : 'bg-[#F4EFE6]/[0.05] border-[#F4EFE6]/20 text-[#D6CFE0] hover:border-[#8BB0D4]/65 hover:text-[#F4EFE6] hover:bg-[#8BB0D4]/10'
+                          }`}
+                        >
+                          {isChecked ? pt.doneLabel : pt.idleLabel}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {currentHintText && (
+                    <p
+                      key={activePointHint}
+                      className="font-editorial-italic text-[14px] text-[#D6CFE0]/90 animate-fade-in"
+                    >
+                      {currentHintText}
+                    </p>
+                  )}
+
+                  {allBodyPointsChecked && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-[#F4EFE6]/10 animate-fade-in">
+                      <span className="gazette-stamp slam text-[#8BB0D4]">
+                        Готово · тело уже чуть спокойнее
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleResetPoints}
+                        className="text-[12.5px] text-[#D6CFE0]/70 hover:text-[#F4EFE6] underline underline-offset-4 cursor-pointer transition-colors"
+                      >
+                        Сбросить
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </Reveal>
             </div>
-          </Reveal>
+          </div>
         </div>
       </section>
 
@@ -324,12 +477,15 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
         id="story-restoration"
         className="scroll-mt-24 relative overflow-x-clip bg-[#EFE8DC] text-[#1C1629]"
       >
-        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-20 lg:py-28">
-          <Reveal>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-              {/* Left: Editorial Copy Steps 04-05 + Pull-Quote + Violet CTA */}
-              <div className="lg:col-span-7 space-y-6">
-                <div className="gazette-double-top pt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            {/* Left: Editorial Copy Steps 04-05 + Pull-Quote + Violet CTA */}
+            <div className="lg:col-span-7 space-y-5">
+              <div className="space-y-3">
+                <Reveal variant="rule-draw">
+                  <div className="gazette-double-top !pt-0" aria-hidden="true" />
+                </Reveal>
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                   <span className="type-kicker text-[#3D6A94]">
                     Глава 02 · Как выстроить восстановление
                   </span>
@@ -337,49 +493,49 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                     РЕШЕНИЕ
                   </span>
                 </div>
+              </div>
 
+              <Reveal variant="clip-title">
                 <h2 className="font-gazette-tall text-4xl sm:text-5xl lg:text-[54px] leading-[0.98] text-[#1C1629]">
                   ОТ РАЗРОЗНЕННЫХ СОВЕТОВ К СИСТЕМЕ
                 </h2>
+              </Reveal>
 
-                <div className="space-y-5">
-                  {WHY_STEPS_PART2.map((step) => (
-                    <div
-                      key={step.num}
-                      className="flex items-start gap-4 border-t border-[#1C1629]/12 pt-4"
-                    >
-                      <span className="font-gazette-mono text-[13px] font-bold text-[#3D6A94] shrink-0 mt-0.5 px-2 py-0.5 rounded-md bg-[#E4EEF7] border border-[#B4CDE4]">
+              <div className="space-y-4">
+                {WHY_STEPS_PART2.map((step, idx) => (
+                  <Reveal
+                    key={step.num}
+                    variant="slide-up"
+                    delayMs={80 * idx}
+                  >
+                    <div className="flex items-start gap-3.5 border-t border-[#1C1629]/12 pt-4">
+                      <span className="font-gazette-mono text-[12.5px] font-bold text-[#3D6A94] shrink-0 mt-0.5 px-2 py-0.5 rounded-md bg-[#E4EEF7] border border-[#B4CDE4]">
                         {step.num}
                       </span>
-                      <div className="space-y-1">
-                        <h3 className="font-editorial text-[18px] text-[#1C1629]">
-                          {step.title}
-                        </h3>
-                        <p className="text-[15.5px] leading-[1.62] text-[#362E47]">
-                          {step.text}
-                        </p>
-                      </div>
+                      <p className="text-[15.5px] leading-[1.58] text-[#362E47]">
+                        <strong className="font-editorial text-[17px] text-[#1C1629] mr-1.5">
+                          {step.title}.
+                        </strong>
+                        {step.text}
+                      </p>
                     </div>
-                  ))}
-                </div>
+                  </Reveal>
+                ))}
+              </div>
 
-                {/* Refined Editorial Pull-Quote */}
-                <blockquote className="rounded-r-2xl bg-[#ECE6F6]/55 border-l-[3px] border-[#523B7D] px-5 py-4 my-2">
+              {/* Refined Editorial Pull-Quote */}
+              <Reveal variant="slide-up" delayMs={160}>
+                <blockquote className="rounded-r-2xl bg-[#ECE6F6]/55 border-l-[3px] border-[#523B7D] px-5 py-4 my-1">
                   <p className="font-editorial-italic text-[17.5px] sm:text-[18.5px] leading-[1.55] text-[#1C1629]">
                     «Устойчивость специалиста держится не на героическом
                     преодолении, а на коротких ритуалах возврата к себе,
                     встроенных в обычный рабочий день».
                   </p>
                 </blockquote>
+              </Reveal>
 
-                <p className="text-[14.5px] leading-[1.6] text-[#615875]">
-                  Техники саморегуляции не отменяют системных перегрузок и не
-                  заменяют пересмотр расписания или отпуск, но помогают беречь
-                  собственные силы там, где на нагрузку нельзя повлиять прямо
-                  сейчас.
-                </p>
-
-                <div className="pt-2">
+              <Reveal variant="fade" delayMs={200}>
+                <div className="pt-1">
                   <button
                     type="button"
                     onClick={() => onNavigate('diagnostics')}
@@ -389,11 +545,13 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                     <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
-              </div>
+              </Reveal>
+            </div>
 
-              {/* Right: Large Daylight Restoration Figure */}
-              <div className="lg:col-span-5 flex items-center justify-center">
-                <div className="relative w-full max-w-[420px] flex items-center justify-center">
+            {/* Right: Large Daylight Restoration Figure */}
+            <div className="lg:col-span-5 flex items-center justify-center">
+              <Reveal variant="figure-rise" className="w-full max-w-[420px]">
+                <div className="relative w-full flex items-center justify-center">
                   <div
                     aria-hidden="true"
                     className="pointer-events-none absolute -inset-4 rounded-full blur-3xl ambient-breathe"
@@ -403,14 +561,15 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                     }}
                   />
                   <img
+                    ref={story2ImgRef}
                     src="./images/story-restoration.jpg"
                     alt="Иллюстрация восстановления: росток и спокойные волны"
-                    className="relative z-10 w-full h-auto object-contain mix-blend-multiply editorial-mask select-none"
+                    className="relative z-10 w-full h-auto object-contain mix-blend-multiply editorial-mask select-none will-change-transform"
                   />
                 </div>
-              </div>
+              </Reveal>
             </div>
-          </Reveal>
+          </div>
         </div>
       </section>
     </div>
