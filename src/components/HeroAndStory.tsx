@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowRight, Wind } from 'lucide-react';
-import { Reveal, useCursorSpotlight, useScrollParallax } from './Reveal';
+import {
+  Reveal,
+  ScrollStage,
+  SectionBridge,
+  useCursorSpotlight,
+  useScrollParallax,
+} from './Reveal';
 import { SectionId } from './TopNavAndRail';
 
 interface HeroAndStoryProps {
@@ -73,6 +79,7 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
 }) => {
   const heroSectionRef = useRef<HTMLElement | null>(null);
   const story1SectionRef = useRef<HTMLElement | null>(null);
+  const story2SectionRef = useRef<HTMLElement | null>(null);
   const story1StampRef = useRef<HTMLDivElement | null>(null);
   const heroImgRef = useRef<HTMLImageElement | null>(null);
   const story1ImgRef = useRef<HTMLImageElement | null>(null);
@@ -92,9 +99,10 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
 
   useCursorSpotlight(heroSectionRef);
   useCursorSpotlight(story1SectionRef);
-  useScrollParallax(heroImgRef, 22);
-  useScrollParallax(story1ImgRef, 26);
-  useScrollParallax(story2ImgRef, 26);
+  useCursorSpotlight(story2SectionRef);
+  useScrollParallax(heroImgRef, 22, 0.045);
+  useScrollParallax(story1ImgRef, 26, 0.05);
+  useScrollParallax(story2ImgRef, 26, 0.05);
 
   useEffect(() => {
     const prefersReduced =
@@ -176,6 +184,10 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
         <div
           aria-hidden="true"
           className="cursor-spotlight pointer-events-none absolute inset-0 z-0"
+        />
+        <div
+          aria-hidden="true"
+          className="cursor-spotlight-pattern pointer-events-none absolute inset-0 z-0"
         />
         <div
           aria-hidden="true"
@@ -264,12 +276,23 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                         'radial-gradient(circle, rgba(139, 176, 212, 0.28) 0%, rgba(107, 80, 158, 0.34) 48%, transparent 74%)',
                     }}
                   />
-                  <img
-                    ref={heroImgRef}
-                    src="./images/hero-equilibrium.jpg"
-                    alt="Тонкие линии равновесия и ветвь на глубоком фиолетовом фоне"
-                    className="relative z-10 w-full h-auto object-contain editorial-mask select-none will-change-transform"
-                  />
+                  <div
+                    className="relative z-10 w-full"
+                    style={{
+                      transform:
+                        'translate3d(calc(var(--mx-norm, 0) * 7px), calc(var(--my-norm, 0) * 6px), 0)',
+                    }}
+                  >
+                    <img
+                      ref={heroImgRef}
+                      src="./images/hero-equilibrium.webp"
+                      alt="Тонкие линии равновесия и ветвь на глубоком фиолетовом фоне"
+                      className="w-full h-auto object-contain select-none will-change-transform"
+                      style={{
+                        filter: 'drop-shadow(0 0 24px rgba(139, 176, 212, 0.22))',
+                      }}
+                    />
+                  </div>
                 </div>
               </Reveal>
             </div>
@@ -292,6 +315,11 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
         </div>
       </section>
 
+      <SectionBridge
+        theme="dark"
+        label="Глава 01 · Истощение"
+      />
+
       {/* ================================================================= */}
       {/* STORY SPREAD 1 (#story, #261F38)                                  */}
       {/* ================================================================= */}
@@ -306,6 +334,10 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
         />
         <div
           aria-hidden="true"
+          className="cursor-spotlight-pattern pointer-events-none absolute inset-0 z-0"
+        />
+        <div
+          aria-hidden="true"
           className="pointer-events-none absolute top-1/3 right-0 w-[520px] h-[520px] rounded-full blur-3xl opacity-35"
           style={{
             background:
@@ -313,7 +345,7 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
           }}
         />
 
-        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24">
+        <ScrollStage className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             {/* Left: Backlit Editorial Figure */}
             <div className="lg:col-span-5 order-2 lg:order-1 flex items-center justify-center">
@@ -327,12 +359,23 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                         'radial-gradient(circle, rgba(139, 176, 212, 0.30) 0%, rgba(82, 59, 125, 0.32) 50%, transparent 74%)',
                     }}
                   />
-                  <img
-                    ref={story1ImgRef}
-                    src="./images/story-depletion.jpg"
-                    alt="Иллюстрация истощения: сосуд с убывающей водой"
-                    className="relative z-10 w-full h-auto object-contain editorial-mask select-none will-change-transform"
-                  />
+                  <div
+                    className="relative z-10 w-full"
+                    style={{
+                      transform:
+                        'translate3d(calc(var(--mx-norm, 0) * 7px), calc(var(--my-norm, 0) * 6px), 0)',
+                    }}
+                  >
+                    <img
+                      ref={story1ImgRef}
+                      src="./images/story-depletion.webp"
+                      alt="Иллюстрация истощения: сосуд с убывающей водой"
+                      className="w-full h-auto object-contain select-none will-change-transform"
+                      style={{
+                        filter: 'drop-shadow(0 0 24px rgba(139, 176, 212, 0.22))',
+                      }}
+                    />
+                  </div>
                 </div>
               </Reveal>
             </div>
@@ -455,29 +498,32 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
               </Reveal>
             </div>
           </div>
-        </div>
+        </ScrollStage>
       </section>
 
       {/* ================================================================= */}
       {/* SMOOTH DAWN TRANSITION (#261F38 -> #EFE8DC)                       */}
       {/* ================================================================= */}
-      <div
-        aria-hidden="true"
-        className="h-24 sm:h-32 w-full"
-        style={{
-          background:
-            'linear-gradient(180deg, #261F38 0%, #443B57 26%, #82788C 54%, #C8BEB2 80%, #EFE8DC 100%)',
-        }}
-      />
+      <SectionBridge theme="dawn" label="Глава 02 · Переход к системе" />
 
       {/* ================================================================= */}
       {/* STORY SPREAD 2 (#story-restoration, #EFE8DC)                      */}
       {/* ================================================================= */}
       <section
         id="story-restoration"
+        ref={story2SectionRef}
         className="scroll-mt-24 relative overflow-x-clip bg-[#EFE8DC] text-[#1C1629]"
       >
-        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24">
+        <div
+          aria-hidden="true"
+          className="cursor-spotlight-light pointer-events-none absolute inset-0 z-0"
+        />
+        <div
+          aria-hidden="true"
+          className="cursor-spotlight-paper-grid pointer-events-none absolute inset-0 z-0"
+        />
+
+        <ScrollStage className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             {/* Left: Editorial Copy Steps 04-05 + Pull-Quote + Violet CTA */}
             <div className="lg:col-span-7 space-y-5">
@@ -562,15 +608,15 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                   />
                   <img
                     ref={story2ImgRef}
-                    src="./images/story-restoration.jpg"
+                    src="./images/story-restoration.webp"
                     alt="Иллюстрация восстановления: росток и спокойные волны"
-                    className="relative z-10 w-full h-auto object-contain mix-blend-multiply editorial-mask select-none will-change-transform"
+                    className="relative z-10 w-full h-auto object-contain select-none will-change-transform"
                   />
                 </div>
               </Reveal>
             </div>
           </div>
-        </div>
+        </ScrollStage>
       </section>
     </div>
   );

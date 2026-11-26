@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   BookOpen,
@@ -22,7 +22,7 @@ import {
   METHODS,
   RegulationMethod,
 } from '../data/methods';
-import { Reveal } from './Reveal';
+import { Reveal, ScrollStage, SectionBridge, useCursorSpotlight } from './Reveal';
 
 type ClusterFilter = 'all' | ClusterId;
 
@@ -84,6 +84,9 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [randomPauseMethod, setRandomPauseMethod] = useState<RegulationMethod | null>(null);
   const [shuffleKey, setShuffleKey] = useState(0);
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useCursorSpotlight(sectionRef);
 
   const quickPausePool = useMemo(
     () => METHODS.filter((m) => m.durationBucket === '1-3' || m.quickSos),
@@ -246,9 +249,19 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
 
   return (
     <section
+      ref={sectionRef}
       id="catalog"
       className="no-print relative overflow-x-clip scroll-mt-24 bg-[#EFE8DC]"
     >
+      <div
+        aria-hidden="true"
+        className="cursor-spotlight-light pointer-events-none absolute inset-0 z-0"
+      />
+      <div
+        aria-hidden="true"
+        className="cursor-spotlight-paper-grid pointer-events-none absolute inset-0 z-0"
+      />
+
       {/* Subtle localized sky-blue spotlight behind header right */}
       <div
         aria-hidden="true"
@@ -268,7 +281,14 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
         }}
       />
 
-      <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-16 space-y-6">
+      <SectionBridge
+        theme="light"
+        label="Раздел 02 · Библиотека"
+        className="relative z-10"
+      />
+
+      <ScrollStage className="relative z-10">
+        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-16 space-y-6">
         <Reveal variant="clip-title">
           {/* Clean Newspaper Double-Top Rule Header */}
           <div className="gazette-double-top pt-4 flex flex-wrap items-end justify-between gap-4">
@@ -504,7 +524,10 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
               </div>
             ) : (
               <div className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div
+                  key={`${selectedCluster}-${selectedDuration}-${selectedEvidence}-${onlyRecommended}`}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                >
                   {visibleMethods.map((method, idx) => {
                     const clusterMeta = CLUSTER_META[method.cluster];
                     const evidenceMeta = EVIDENCE_META[method.evidenceTier];
@@ -570,7 +593,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                         </p>
 
                         {/* Evidence Badge + Expandable Scientific Note */}
-                        <div className="space-y-2 pt-0.5">
+                        <div className="pt-0.5">
                           <div className="flex flex-wrap items-center gap-2.5">
                             <span
                               className={`inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[12px] font-semibold ${evidenceMeta.toneClass}`}
@@ -594,11 +617,17 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                             </button>
                           </div>
 
-                          {isEvidenceOpen && (
-                            <div className="rounded-xl p-3 text-[13px] leading-relaxed bg-[#E4EEF7] border border-[#B4CDE4] text-[#264A6D]">
-                              {method.evidenceNote}
+                          <div
+                            className="accordion-grid"
+                            data-open={isEvidenceOpen ? 'true' : 'false'}
+                            aria-hidden={!isEvidenceOpen}
+                          >
+                            <div className="accordion-inner">
+                              <div className="mt-2 rounded-xl p-3 text-[13px] leading-relaxed bg-[#E4EEF7] border border-[#B4CDE4] text-[#264A6D]">
+                                {method.evidenceNote}
+                              </div>
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
 
@@ -689,7 +718,8 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
             )}
           </div>
         </div>
-      </div>
+        </div>
+      </ScrollStage>
     </section>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Menu, Wind, X } from 'lucide-react';
 
 export type SectionId =
@@ -35,6 +35,19 @@ const RAIL_SLIDES: { id: SectionId; label: string }[] = [
   { id: 'tracker', label: 'Трекер' },
 ];
 
+const SCROLL_KEYS = new Set([
+  'ArrowUp',
+  'ArrowDown',
+  'PageUp',
+  'PageDown',
+  'Home',
+  'End',
+  ' ',
+]);
+
+const easeInOutQuart = (t: number): number =>
+  t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+
 export function useActiveSection(): {
   activeSection: SectionId;
   navigateToSection: (id: SectionId) => void;
@@ -44,6 +57,9 @@ export function useActiveSection(): {
   const [activeSection, setActiveSection] = useState<SectionId>('top');
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isDarkHeader, setIsDarkHeader] = useState(true);
+  const cancelScrollRef = useRef<(() => void) | null>(null);
+  const flashTimerRef = useRef<number | null>(null);
+  const flashElRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const ids: SectionId[] = [
@@ -121,21 +137,129 @@ export function useActiveSection(): {
     };
   }, []);
 
-  const navigateToSection = (id: SectionId) => {
-    setActiveSection(id);
-    const prefersReduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const behavior: ScrollBehavior = prefersReduced ? 'auto' : 'smooth';
+  useEffect(() => {
+    return () => {
+      cancelScrollRef.current?.();
+      if (flashTimerRef.current !== null) {
+        window.clearTimeout(flashTimerRef.current);
+      }
+      flashElRef.current?.classList.remove('section-arrive-flash');
+    };
+  }, []);
 
-    if (id === 'top') {
-      window.scrollTo({ top: 0, behavior });
-      return;
+  const triggerArriveFlash = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
+    if (flashTimerRef.current !== null) {
+      window.clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = null;
     }
-    document
-      .getElementById(id)
-      ?.scrollIntoView({ behavior, block: 'start' });
-  };
+    if (flashElRef.current && flashElRef.current !== el) {
+      flashElRef.current.classList.remove('section-arrive-flash');
+    }
+    el.classList.remove('section-arrive-flash');
+    void el.offsetWidth;
+    el.classList.add('section-arrive-flash');
+    flashElRef.current = el;
+    flashTimerRef.current = window.setTimeout(() => {
+      el.classList.remove('section-arrive-flash');
+      if (flashElRef.current === el) {
+        flashElRef.current = null;
+      }
+      flashTimerRef.current = null;
+    }, 800);
+  }, []);
+
+  const navigateToSection = useCallback(
+    (id: SectionId) => {
+      setActiveSection(id);
+      cancelScrollRef.current?.();
+
+      const targetEl = document.getElementById(id);
+      const maxScroll = Math.max(
+        0,
+        document.documentElement.scrollHeight - window.innerHeight
+      );
+      const rawTop =
+        id === 'top'
+          ? 0
+          : targetEl
+          ? targetEl.getBoundingClientRect().top + window.scrollY - 72
+          : null;
+
+      if (rawTop === null) return;
+      const targetTop = Math.max(0, Math.min(maxScroll, rawTop));
+
+      const prefersReduced =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReduced) {
+        window.scrollTo({ top: targetTop, behavior: 'auto' });
+        return;
+      }
+
+      const startY = window.scrollY;
+      const distance = targetTop - startY;
+      if (Math.abs(distance) < 2) {
+        window.scrollTo({ top: targetTop, behavior: 'auto' });
+        triggerArriveFlash(targetEl);
+        return;
+      }
+
+      const durationMs = 680;
+      const startTime = performance.now();
+      let rafId = 0;
+      let cancelled = false;
+
+      const cleanup = () => {
+        if (cancelled) return;
+        cancelled = true;
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
+        window.removeEventListener('wheel', onUserInterrupt);
+        window.removeEventListener('touchstart', onUserInterrupt);
+        window.removeEventListener('keydown', onKeyInterrupt);
+        if (cancelScrollRef.current === cleanup) {
+          cancelScrollRef.current = null;
+        }
+      };
+
+      const onUserInterrupt = () => {
+        cleanup();
+      };
+
+      const onKeyInterrupt = (e: KeyboardEvent) => {
+        if (SCROLL_KEYS.has(e.key)) {
+          cleanup();
+        }
+      };
+
+      cancelScrollRef.current = cleanup;
+      window.addEventListener('wheel', onUserInterrupt, { passive: true });
+      window.addEventListener('touchstart', onUserInterrupt, { passive: true });
+      window.addEventListener('keydown', onKeyInterrupt);
+
+      const step = (now: number) => {
+        if (cancelled) return;
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / durationMs);
+        const eased = easeInOutQuart(t);
+        window.scrollTo({ top: startY + distance * eased, behavior: 'auto' });
+
+        if (t < 1) {
+          rafId = requestAnimationFrame(step);
+        } else {
+          cleanup();
+          triggerArriveFlash(targetEl);
+        }
+      };
+
+      rafId = requestAnimationFrame(step);
+    },
+    [triggerArriveFlash]
+  );
 
   return { activeSection, navigateToSection, scrollProgress, isDarkHeader };
 }
@@ -313,6 +437,23 @@ export const TopNavAndRail: React.FC<TopNavAndRailProps> = ({
             })}
           </nav>
         )}
+
+        {/* Luminous reading progress thread along bottom header border */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-0 inset-x-0 h-[2px] overflow-hidden"
+        >
+          <div
+            className="h-full"
+            style={{
+              width: `${scrollProgress}%`,
+              background: 'linear-gradient(90deg, #523B7D, #8BB0D4)',
+              boxShadow: isDarkHeader
+                ? '0 0 10px rgba(139, 176, 212, 0.72), 0 0 4px rgba(82, 59, 125, 0.6)'
+                : '0 0 8px rgba(82, 59, 125, 0.38)',
+            }}
+          />
+        </div>
       </header>
 
       {/* Interactive Left Desktop Slide Navigation Rail (xl+ only) */}

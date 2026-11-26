@@ -143,7 +143,7 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
 
   return (
     <div
-      className="no-print fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-xs"
+      className="no-print modal-backdrop-in fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-xs"
       style={{ background: 'var(--scrim)' }}
       role="dialog"
       aria-modal="true"
@@ -155,7 +155,7 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
       <div
         ref={modalPanelRef}
         tabIndex={-1}
-        className="pop-in relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl focus:outline-none"
+        className="modal-card-in relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl focus:outline-none"
         style={{
           background: '#FCF9F3',
           color: 'var(--ink)',

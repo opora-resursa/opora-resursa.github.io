@@ -17,7 +17,7 @@ import {
 import { METHODS, RegulationMethod } from '../data/methods';
 import { HabitRule, ThreeGoodEntry } from '../types/app';
 import { DAY_LABELS, formatEntryDateLabel } from '../utils/storage';
-import { Reveal } from './Reveal';
+import { Reveal, ScrollStage, SectionBridge, useCursorSpotlight } from './Reveal';
 
 type TrackerTab = 'habits' | 'energy' | 'evening';
 
@@ -142,6 +142,9 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
   const [selectedDay, setSelectedDay] = useState<number>(todayIndex);
   const [lastToggledKey, setLastToggledKey] = useState<string | null>(null);
   const rippleTimerRef = useRef<number | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useCursorSpotlight(sectionRef);
 
   const [good1, setGood1] = useState('');
   const [good2, setGood2] = useState('');
@@ -304,10 +307,27 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
 
   return (
     <section
+      ref={sectionRef}
       id="tracker"
-      className="no-print relative overflow-x-clip scroll-mt-24 bg-[#EFE8DC]"
+      className="no-print relative overflow-x-clip scroll-mt-24 bg-[#F5F0E5]"
     >
-      <div className="max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-14 lg:py-20 space-y-8">
+      <div
+        aria-hidden="true"
+        className="cursor-spotlight-light pointer-events-none absolute inset-0 z-0"
+      />
+      <div
+        aria-hidden="true"
+        className="cursor-spotlight-paper-grid pointer-events-none absolute inset-0 z-0"
+      />
+
+      <SectionBridge
+        theme="light"
+        label="Раздел 03 · Трекер недели"
+        className="relative z-10"
+      />
+
+      <ScrollStage className="relative z-10">
+        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-14 lg:py-20 space-y-8">
         {/* Clean Newspaper Double-Top Rule Header */}
         <Reveal variant="clip-title">
           <div className="gazette-double-top pt-4 flex flex-wrap items-end justify-between gap-4">
@@ -500,7 +520,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                     id="tracker-panel-habits"
                     role="tabpanel"
                     aria-labelledby="tracker-tab-habits"
-                    className="pt-6 pop-in"
+                    className="pt-6 step-slide-in"
                   >
                     {/* Mobile Header Strip for Habit Formula + Clear Sample Data */}
                     <div className="flex md:hidden flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#1C1629]/10">
@@ -917,7 +937,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                     id="tracker-panel-energy"
                     role="tabpanel"
                     aria-labelledby="tracker-tab-energy"
-                    className="pt-6 pop-in grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+                    className="pt-6 step-slide-in grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
                   >
                     {/* Left (5/12): Segmented Day Switcher + Presets + Slider */}
                     <div className="lg:col-span-5 space-y-5">
@@ -968,7 +988,10 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
 
                       {/* Large Tabular Readout + State Pill */}
                       <div className="rounded-2xl p-4 sm:p-5 bg-[#F7F2E7] border border-[#1C1629]/12 space-y-4">
-                        <div className="flex items-center justify-between gap-3">
+                        <div
+                          key={selectedDay}
+                          className="animate-fade-in flex items-center justify-between gap-3"
+                        >
                           <div className="flex items-baseline gap-1.5">
                             <span className="font-num text-4xl leading-none text-[#1C1629] tabular-nums">
                               {selectedDayLevel !== null ? selectedDayLevel : '—'}
@@ -1094,7 +1117,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                     id="tracker-panel-evening"
                     role="tabpanel"
                     aria-labelledby="tracker-tab-evening"
-                    className="pt-6 pop-in grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+                    className="pt-6 step-slide-in grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
                   >
                     {/* Left (6/12): Calm Prompt & 3 Spacious Numbered Inputs */}
                     <div
@@ -1243,7 +1266,8 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
             </div>
           </div>
         </Reveal>
-      </div>
+        </div>
+      </ScrollStage>
     </section>
   );
 };

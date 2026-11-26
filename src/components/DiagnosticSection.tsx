@@ -12,7 +12,7 @@ import {
 import { ClusterId, CLUSTER_META, METHODS, RegulationMethod } from '../data/methods';
 import { DiagnosticAnswers, DiagnosticResult } from '../types/app';
 import { pickRecommendedMethods } from '../utils/storage';
-import { Reveal } from './Reveal';
+import { Reveal, ScrollStage, SectionBridge, useCursorSpotlight } from './Reveal';
 
 interface DiagnosticQuestion {
   id: string;
@@ -150,6 +150,9 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
   const advanceTimerRef = useRef<number | null>(null);
   const questionnaireRef = useRef<HTMLDivElement | null>(null);
   const shouldRestoreFocusRef = useRef(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useCursorSpotlight(sectionRef);
 
   const clearAdvanceTimer = () => {
     if (advanceTimerRef.current !== null) {
@@ -428,10 +431,27 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
 
   return (
     <section
+      ref={sectionRef}
       id="diagnostics"
-      className="no-print relative overflow-x-clip scroll-mt-24 bg-[#EFE8DC]"
+      className="no-print relative overflow-x-clip scroll-mt-24 bg-[#F5F0E5]"
     >
-      <div className="max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-14 lg:py-20 space-y-8">
+      <div
+        aria-hidden="true"
+        className="cursor-spotlight-light pointer-events-none absolute inset-0 z-0"
+      />
+      <div
+        aria-hidden="true"
+        className="cursor-spotlight-paper-grid pointer-events-none absolute inset-0 z-0"
+      />
+
+      <SectionBridge
+        theme="light"
+        label="Раздел 01 · Самооценка"
+        className="relative z-10"
+      />
+
+      <ScrollStage className="relative z-10">
+        <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-14 lg:py-20 space-y-8">
         <Reveal variant="clip-title">
           {/* Newspaper Double-Top Rule Header */}
           <div className="gazette-double-top pt-4 flex flex-wrap items-end justify-between gap-4">
@@ -910,7 +930,8 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
             </div>
           </div>
         </Reveal>
-      </div>
+        </div>
+      </ScrollStage>
     </section>
   );
 };

@@ -6,7 +6,12 @@ import {
   Upload,
 } from 'lucide-react';
 import { AppState } from '../types/app';
-import { Reveal, useCursorSpotlight } from './Reveal';
+import {
+  Reveal,
+  ScrollStage,
+  SectionBridge,
+  useCursorSpotlight,
+} from './Reveal';
 
 interface LocalProfileFooterProps {
   state: AppState;
@@ -83,34 +88,45 @@ export const LocalProfileFooter: React.FC<LocalProfileFooterProps> = ({
   };
 
   return (
-    <footer
-      id="profile"
-      ref={footerRef}
-      className="no-print scroll-mt-24 on-dark-band relative overflow-x-clip bg-[#1F192E] text-[#F4EFE6]"
-    >
-      {/* Balanced dual soft spotlights + cursor spotlight */}
-      <div
-        aria-hidden="true"
-        className="cursor-spotlight pointer-events-none absolute inset-0 z-0"
+    <>
+      <SectionBridge
+        theme="dusk"
+        label="Приватность и памятка"
+        className="no-print"
       />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none -left-24 -top-20 absolute h-96 w-96 rounded-full blur-3xl opacity-40"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(107, 80, 158, 0.34) 0%, rgba(82, 59, 125, 0.14) 50%, transparent 72%)',
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none -right-24 -bottom-24 absolute h-96 w-96 rounded-full blur-3xl opacity-40"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(139, 176, 212, 0.28) 0%, rgba(61, 106, 148, 0.14) 50%, transparent 72%)',
-        }}
-      />
+      <footer
+        id="profile"
+        ref={footerRef}
+        className="no-print scroll-mt-24 on-dark-band relative overflow-x-clip bg-[#1F192E] text-[#F4EFE6]"
+      >
+        {/* Balanced dual soft spotlights + cursor spotlight */}
+        <div
+          aria-hidden="true"
+          className="cursor-spotlight pointer-events-none absolute inset-0 z-0"
+        />
+        <div
+          aria-hidden="true"
+          className="cursor-spotlight-pattern pointer-events-none absolute inset-0 z-0"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none -left-24 -top-20 absolute h-96 w-96 rounded-full blur-3xl opacity-40"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(107, 80, 158, 0.34) 0%, rgba(82, 59, 125, 0.14) 50%, transparent 72%)',
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none -right-24 -bottom-24 absolute h-96 w-96 rounded-full blur-3xl opacity-40"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(139, 176, 212, 0.28) 0%, rgba(61, 106, 148, 0.14) 50%, transparent 72%)',
+          }}
+        />
 
-      <Reveal variant="slide-up">
+        <ScrollStage>
+          <Reveal variant="slide-up">
         <div className="relative z-10 max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-16 space-y-8">
           {/* Newspaper Top Double Rule */}
           <div className="gazette-double-top pt-3 flex flex-wrap items-center justify-between gap-2">
@@ -204,7 +220,9 @@ export const LocalProfileFooter: React.FC<LocalProfileFooterProps> = ({
             </p>
           </div>
         </div>
-      </Reveal>
-    </footer>
+        </Reveal>
+        </ScrollStage>
+      </footer>
+    </>
   );
 };

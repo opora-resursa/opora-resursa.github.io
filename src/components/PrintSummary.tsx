@@ -847,7 +847,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
   return (
     <div
-      className="no-print fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 backdrop-blur-xs"
+      className="no-print modal-backdrop-in fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 backdrop-blur-xs"
       style={{ background: 'var(--scrim)' }}
       role="dialog"
       aria-modal="true"
@@ -859,7 +859,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
       <div
         ref={modalPanelRef}
         tabIndex={-1}
-        className="pop-in relative flex flex-col w-full max-w-4xl max-h-[92vh] rounded-2xl overflow-hidden focus:outline-none"
+        className="modal-card-in relative flex flex-col w-full max-w-4xl max-h-[92vh] rounded-2xl overflow-hidden focus:outline-none"
         style={{
           background: '#FCF9F3',
           color: 'var(--ink)',
