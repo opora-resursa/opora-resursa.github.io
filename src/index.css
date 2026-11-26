@@ -1,0 +1,449 @@
+@import "tailwindcss";
+
+:root {
+  /* Warm Archival Cotton Beige Workspace */
+  --bg-elev-1: #F7F2E7;
+  --bg-elev-2: #FCF9F3;
+  --bg-elev-3: #E5DDD0;
+
+  /* Deep Violet Ink */
+  --ink: #1C1629;
+  --ink-2: #362E47;
+  --ink-3: #615875;
+  --ink-4: #6B6280;
+  --line: rgba(28, 22, 41, 0.11);
+  --line-strong: rgba(28, 22, 41, 0.21);
+  --rule-ink: #241C35;
+  --bevel-top: rgba(255, 255, 255, 0.86);
+
+  /* Noble Violet */
+  --violet: #523B7D;
+  --violet-ink: #38255C;
+  --violet-surface: #ECE6F6;
+  --violet-border: #CBBEE4;
+
+  /* Dusty Sky-Blue */
+  --sky: #3D6A94;
+  --sky-mid: #5282B0;
+  --sky-ink: #264A6D;
+  --sky-surface: #E4EEF7;
+  --sky-border: #B4CDE4;
+
+  /* Soft Plum Accent (Safety / Alerts) */
+  --plum: #7A4469;
+  --plum-ink: #572B49;
+  --plum-surface: #F3E6EE;
+  --plum-border: #D9B8CE;
+
+  /* Dark Editorial Band Tokens */
+  --dark-cover: #1F192E;
+  --on-dark: #F4EFE6;
+  --scrim: rgba(20, 15, 32, 0.58);
+
+  /* Gradients */
+  --grad-signature: linear-gradient(135deg, #3A2561 0%, #684E9C 52%, #3D6A94 100%);
+  --grad-violet-deep: linear-gradient(138deg, #271944 0%, #4E377A 56%, #6B509E 100%);
+  --grad-sky-deep: linear-gradient(138deg, #1E3B58 0%, #38638C 56%, #5081AF 100%);
+
+  /* Tactile Paper Bevel Shadows */
+  --shadow-card: 0 1px 2px rgba(28, 22, 41, 0.04), 0 10px 26px rgba(28, 22, 41, 0.05), 0 0 0 1px var(--line), inset 0 1px 0 var(--bevel-top);
+  --shadow-lift: 0 18px 40px rgba(39, 25, 68, 0.14), 0 0 0 1px var(--violet-border), inset 0 1px 0 var(--bevel-top);
+  --shadow-modal: 0 32px 84px rgba(20, 15, 32, 0.34), 0 0 0 1px var(--line-strong);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #1F192E;
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: 15.5px;
+  line-height: 1.6;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+@layer components {
+  /* ================= EDITORIAL TYPOGRAPHY ================= */
+  .font-gazette-tall {
+    font-family: 'Oswald', 'DIN Condensed', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    line-height: 0.96;
+  }
+
+  .font-masthead-title {
+    font-family: 'Lora', 'Baskerville', 'Georgia', serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .font-editorial {
+    font-family: 'Lora', 'Georgia', serif;
+    font-weight: 700;
+    letter-spacing: -0.018em;
+    line-height: 1.18;
+  }
+
+  .font-editorial-body {
+    font-family: 'Lora', 'Georgia', serif;
+    font-weight: 400;
+    line-height: 1.65;
+  }
+
+  .font-editorial-italic {
+    font-family: 'Lora', 'Georgia', serif;
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  .font-gazette-mono {
+    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+
+  .font-num {
+    font-family: 'Oswald', 'DIN Condensed', sans-serif;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.012em;
+  }
+
+  .type-kicker {
+    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    line-height: 1.3;
+  }
+
+  .type-meta {
+    font-size: 14.5px;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    line-height: 1.56;
+    color: var(--ink-3);
+  }
+
+  .type-micro {
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: -0.003em;
+    line-height: 1.4;
+  }
+
+  .type-pill {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.004em;
+    line-height: 1.2;
+  }
+
+  .grad-text {
+    background: var(--grad-signature);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ================= RESTRAINED NEWSPAPER ACCENTS ================= */
+  .gazette-double-top {
+    position: relative;
+    border-top: 2px solid var(--rule-ink);
+    padding-top: 16px;
+  }
+
+  .gazette-double-top::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--rule-ink);
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  .on-dark-band {
+    --rule-ink: rgba(244, 239, 230, 0.34);
+  }
+
+  .drop-cap {
+    float: left;
+    width: 40px;
+    height: 40px;
+    margin: 4px 8px 2px 0;
+    border-radius: 8px;
+    background: var(--on-dark);
+    color: var(--dark-cover);
+    font-family: 'Lora', 'Georgia', serif;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 40px;
+    text-align: center;
+    box-shadow: 0 4px 14px rgba(10, 6, 20, 0.32);
+  }
+
+  .gazette-stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border: 1.5px solid currentColor;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    transform: rotate(-2deg);
+    box-shadow: inset 0 0 0 0.5px currentColor;
+  }
+
+  .gazette-stamp.slam {
+    animation: stampSlam 260ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* ================= EDITORIAL FIGURE MASK & PAPER CARDS ================= */
+  .editorial-mask {
+    mask-image: radial-gradient(ellipse 68% 66% at 50% 50%, black 42%, transparent 92%);
+    -webkit-mask-image: radial-gradient(ellipse 68% 66% at 50% 50%, black 42%, transparent 92%);
+  }
+
+  .paper-card {
+    position: relative;
+    background: var(--bg-elev-2);
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
+  }
+
+  .paper-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* ================= ELEVATED TACTILE BUTTONS ================= */
+  .btn-violet {
+    background: var(--grad-violet-deep);
+    color: #FAF6EE;
+    box-shadow: 0 4px 14px rgba(58, 37, 97, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.20);
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, filter 180ms ease;
+  }
+
+  .btn-violet:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(82, 59, 125, 0.42), 0 0 20px rgba(107, 80, 158, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    filter: brightness(1.08);
+  }
+
+  .btn-violet:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .btn-sky {
+    background: var(--grad-sky-deep);
+    color: #FAF6EE;
+    box-shadow: 0 4px 14px rgba(30, 59, 88, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.20);
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, filter 180ms ease;
+  }
+
+  .btn-sky:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(30, 59, 88, 0.38), 0 0 20px rgba(82, 130, 176, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    filter: brightness(1.08);
+  }
+
+  .btn-sky:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .btn-paper {
+    background: var(--bg-elev-1);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+    box-shadow: 0 1px 2px rgba(28, 22, 41, 0.04), inset 0 1px 0 var(--bevel-top);
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+  }
+
+  .btn-paper:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: var(--violet-surface);
+    border-color: var(--violet-border);
+    color: var(--violet-ink);
+    box-shadow: 0 8px 18px rgba(82, 59, 125, 0.14);
+  }
+
+  .btn-paper:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+/* ================= CALM ENERGY RANGE SLIDER ================= */
+.energy-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+
+.energy-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--grad-violet-deep);
+  border: 2.5px solid #FCF9F3;
+  box-shadow: 0 3px 10px rgba(82, 59, 125, 0.38);
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.energy-range::-webkit-slider-thumb:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(82, 59, 125, 0.5);
+}
+
+.energy-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--violet);
+  border: 2.5px solid #FCF9F3;
+  box-shadow: 0 3px 10px rgba(82, 59, 125, 0.38);
+  cursor: pointer;
+}
+
+.energy-range:focus-visible {
+  box-shadow: 0 0 0 3px rgba(82, 59, 125, 0.28);
+}
+
+/* ================= ANIMATIONS ================= */
+@keyframes stampSlam {
+  0% {
+    transform: scale(1.36) rotate(-6deg);
+    opacity: 0.4;
+  }
+  65% {
+    transform: scale(0.96) rotate(-1.5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(-2deg);
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pop-in {
+  animation: popIn 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 200ms ease-out;
+}
+
+@keyframes ambient-breathe {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+.ambient-breathe {
+  animation: ambient-breathe 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-breathe,
+  .pop-in,
+  .gazette-stamp.slam,
+  .animate-fade-in {
+    animation: none !important;
+  }
+}
+
+/* ================= PRINT STYLESHEET ================= */
+@media print {
+  @page {
+    margin: 14mm 16mm;
+    size: A4 portrait;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #1C1629 !important;
+    font-size: 11pt !important;
+    line-height: 1.45 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  tr,
+  .print-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+}
