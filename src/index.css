@@ -56,7 +56,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   font-size: 16px;
 }
 
@@ -80,17 +80,18 @@ body {
 }
 
 @layer components {
-  /* ================= EDITORIAL TYPOGRAPHY ================= */
+  /* ================= EDITORIAL TYPOGRAPHY (3 FONTS: Oswald, Lora, Inter) ================= */
   .font-gazette-tall {
-    font-family: 'Oswald', 'DIN Condensed', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
+    font-family: 'Oswald', 'DIN Condensed', 'Arial Narrow', sans-serif;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: -0.01em;
-    line-height: 0.96;
+    letter-spacing: -0.005em;
+    line-height: 1.14;
+    padding-bottom: 0.06em;
   }
 
   .font-masthead-title {
-    font-family: 'Lora', 'Baskerville', 'Georgia', serif;
+    font-family: 'Lora', 'Georgia', serif;
     font-weight: 700;
     letter-spacing: -0.01em;
   }
@@ -98,14 +99,14 @@ body {
   .font-editorial {
     font-family: 'Lora', 'Georgia', serif;
     font-weight: 700;
-    letter-spacing: -0.018em;
-    line-height: 1.18;
+    letter-spacing: -0.016em;
+    line-height: 1.22;
   }
 
   .font-editorial-body {
-    font-family: 'Lora', 'Georgia', serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     font-weight: 400;
-    line-height: 1.65;
+    line-height: 1.62;
   }
 
   .font-editorial-italic {
@@ -115,7 +116,7 @@ body {
   }
 
   .font-gazette-mono {
-    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.04em;
   }
@@ -124,14 +125,14 @@ body {
     font-family: 'Oswald', 'DIN Condensed', sans-serif;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.012em;
+    letter-spacing: -0.01em;
   }
 
   .type-kicker {
-    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
-    font-size: 10.5px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.11em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     line-height: 1.3;
   }
@@ -211,7 +212,7 @@ body {
     padding: 3px 9px;
     border: 1.5px solid currentColor;
     border-radius: 4px;
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.09em;
@@ -631,7 +632,7 @@ body {
 .bridge-line {
   transform: scaleX(0);
   opacity: 0;
-  transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1), opacity 700ms ease;
+  transition: transform 280ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 220ms ease;
 }
 
 .bridge-line[data-visible="true"] {
@@ -640,9 +641,9 @@ body {
 }
 
 .bridge-diamond {
-  transform: scale(0.3) rotate(0deg);
+  transform: scale(0.4) rotate(0deg);
   opacity: 0;
-  transition: transform 760ms cubic-bezier(0.16, 1, 0.3, 1), opacity 600ms ease;
+  transition: transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 220ms ease;
 }
 
 .bridge-diamond[data-visible="true"] {
@@ -650,46 +651,41 @@ body {
   opacity: 1;
 }
 
-/* ================= REVEAL UTILITIES ================= */
+/* ================= REVEAL UTILITIES (SNAPPY & ZERO-LAG) ================= */
 .reveal-base {
   transition:
-    opacity 780ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 820ms cubic-bezier(0.16, 1, 0.3, 1),
-    filter 820ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 260ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    transform 280ms cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 .reveal-slide-up-hidden {
   opacity: 0;
-  transform: translateY(34px) scale(0.985);
+  transform: translateY(14px);
 }
 
 .reveal-slide-up-visible {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
 }
 
 .reveal-clip-title-hidden {
   opacity: 0;
-  transform: translateY(24px) scale(0.988);
-  filter: blur(3px);
+  transform: translateY(12px);
 }
 
 .reveal-clip-title-visible {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0);
+  transform: translateY(0);
 }
 
 .reveal-figure-rise-hidden {
   opacity: 0;
-  transform: translateY(30px) scale(0.92);
-  filter: blur(5px);
+  transform: translateY(14px);
 }
 
 .reveal-figure-rise-visible {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0);
+  transform: translateY(0);
 }
 
 .reveal-rule-draw-hidden {

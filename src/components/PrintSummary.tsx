@@ -341,7 +341,7 @@ export const PrintSheetContent: React.FC<{
             className="absolute top-[3px] left-0 right-0 h-px bg-[#1C1629]/45"
           />
           <div>
-            <h1 className="font-gazette-tall text-[26px] sm:text-[30px] print:text-[28px] leading-[0.98] text-[#1F192E] tracking-tight">
+            <h1 className="font-gazette-tall text-[26px] sm:text-[30px] print:text-[28px] leading-[1.12] text-[#1F192E] tracking-tight">
               ЛИЧНАЯ ПАМЯТКА ВОССТАНОВЛЕНИЯ
             </h1>
             <p className="font-editorial-italic text-[13px] text-[#362E47] mt-1">

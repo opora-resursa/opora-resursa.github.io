@@ -386,7 +386,7 @@ export function App() {
       const validated = validateImportedBackup(parsed);
       if (!validated) {
         showToast(
-          'Не удалось прочитать резервную копию: неверный формат файла',
+          'Не удалось открыть файл — выберите файл записей, сохранённый с этого сайта',
           'error'
         );
         return;
@@ -395,9 +395,12 @@ export function App() {
       if (!validated.diagnostic) {
         setOnlyRecommended(false);
       }
-      showToast('Резервная копия успешно восстановлена');
+      showToast('Записи успешно загружены');
     } catch {
-      showToast('Файл повреждён или не является корректным JSON', 'error');
+      showToast(
+        'Файл повреждён — выберите файл записей, сохранённый с этого сайта',
+        'error'
+      );
     }
   };
 

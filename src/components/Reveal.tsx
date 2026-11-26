@@ -111,12 +111,14 @@ export const Reveal: React.FC<RevealProps> = ({
 
   const stateClass = visible
     ? VARIANT_CLASSES[variant].visible
-    : `${VARIANT_CLASSES[variant].hidden} will-change-transform`;
+    : VARIANT_CLASSES[variant].hidden;
+
+  const cappedDelay = Math.min(delayMs, 45);
 
   return (
     <div
       ref={ref}
-      style={delayMs > 0 ? { transitionDelay: `${delayMs}ms` } : undefined}
+      style={cappedDelay > 0 ? { transitionDelay: `${cappedDelay}ms` } : undefined}
       className={`reveal-base ${stateClass} ${className}`}
     >
       {children}
@@ -126,8 +128,8 @@ export const Reveal: React.FC<RevealProps> = ({
 
 export function useScrollParallax(
   ref: React.RefObject<HTMLElement | null>,
-  rangePx = 24,
-  scaleRange = 0.045
+  rangePx = 16,
+  _scaleRange = 0
 ): void {
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -142,6 +144,7 @@ export function useScrollParallax(
     if (!el) return;
 
     let rafId = 0;
+    const effectiveRange = Math.min(rangePx, 16);
 
     const update = () => {
       rafId = 0;
@@ -151,12 +154,8 @@ export function useScrollParallax(
       const center = rect.top + rect.height / 2;
       const raw = (center - vh / 2) / (vh / 2 + rect.height / 2);
       const clamped = Math.max(-1, Math.min(1, raw));
-      const offset = Number((clamped * rangePx).toFixed(2));
-      const centrality = 1 - Math.abs(clamped);
-      const scale = Number(
-        (1 - scaleRange + centrality * scaleRange * 1.5).toFixed(4)
-      );
-      el.style.transform = `translate3d(0, ${offset}px, 0) scale(${scale})`;
+      const offset = Number((clamped * effectiveRange).toFixed(1));
+      el.style.transform = `translate3d(0, ${offset}px, 0)`;
     };
 
     const schedule = () => {
@@ -175,7 +174,7 @@ export function useScrollParallax(
       window.removeEventListener('resize', schedule);
       el.style.transform = '';
     };
-  }, [ref, rangePx, scaleRange]);
+  }, [ref, rangePx, _scaleRange]);
 }
 
 export function useCursorSpotlight(
@@ -290,73 +289,7 @@ export const ScrollStage: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className = '' }) => {
-  const anchorRef = useRef<HTMLDivElement | null>(null);
-  const stageRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      window.matchMedia('(pointer: coarse)').matches
-    ) {
-      return;
-    }
-
-    const anchor = anchorRef.current;
-    const el = stageRef.current;
-    if (!anchor || !el) return;
-
-    let rafId = 0;
-
-    const update = () => {
-      rafId = 0;
-      const rect = anchor.getBoundingClientRect();
-      const vh = window.innerHeight || 1;
-      const entryStart = vh * 0.98;
-      const entryEnd = vh * 0.68;
-
-      if (rect.top <= entryEnd) {
-        el.style.transform = '';
-        return;
-      }
-
-      const raw = (entryStart - rect.top) / (entryStart - entryEnd || 1);
-      const clamped = Math.max(0, Math.min(1, raw));
-      const eased = 1 - Math.pow(1 - clamped, 2);
-      const translateY = ((1 - eased) * 22).toFixed(2);
-      const scale = (0.982 + eased * 0.018).toFixed(4);
-      el.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
-    };
-
-    const schedule = () => {
-      if (!rafId) {
-        rafId = requestAnimationFrame(update);
-      }
-    };
-
-    update();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule, { passive: true });
-
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-      el.style.transform = '';
-    };
-  }, []);
-
-  return (
-    <div ref={anchorRef}>
-      <div
-        ref={stageRef}
-        className={className}
-        style={{ transformOrigin: 'center top' }}
-      >
-        {children}
-      </div>
-    </div>
-  );
+  return <div className={className}>{children}</div>;
 };
 
 export const SectionBridge: React.FC<{
@@ -448,7 +381,7 @@ export const SectionBridge: React.FC<{
       <div
         ref={bridgeRef}
         aria-hidden={!label}
-        className={`relative w-full h-24 sm:h-32 flex items-center justify-center overflow-hidden ${className}`}
+        className={`relative w-full h-16 sm:h-20 flex items-center justify-center overflow-hidden ${className}`}
         style={bridgeStyle}
       >
         <div className="w-full max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 flex flex-col items-center gap-2">
@@ -482,7 +415,7 @@ export const SectionBridge: React.FC<{
       <div
         ref={bridgeRef}
         aria-hidden={!label}
-        className={`relative w-full py-5 sm:py-6 flex items-center justify-center overflow-hidden ${className}`}
+        className={`relative w-full py-3 sm:py-3.5 flex items-center justify-center overflow-hidden ${className}`}
         style={{
           background: 'linear-gradient(180deg, #1F192E 0%, #261F38 100%)',
         }}
@@ -517,7 +450,7 @@ export const SectionBridge: React.FC<{
     <div
       ref={bridgeRef}
       aria-hidden={!label}
-      className={`relative w-full py-4 sm:py-5 flex items-center justify-center overflow-hidden ${className}`}
+      className={`relative w-full py-2.5 sm:py-3 flex items-center justify-center overflow-hidden ${className}`}
     >
       <div className="w-full max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 flex flex-col items-center gap-1.5">
         <div className="w-full flex items-center gap-3">

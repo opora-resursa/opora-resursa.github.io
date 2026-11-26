@@ -229,7 +229,7 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
               </div>
 
               <div className="space-y-3">
-                <h1 className="font-gazette-tall text-[52px] sm:text-[64px] lg:text-[74px] leading-[0.96] tracking-tight text-[#F4EFE6]">
+                <h1 className="font-gazette-tall text-[52px] sm:text-[64px] lg:text-[74px] leading-[1.08] tracking-tight text-[#F4EFE6]">
                   ОПОРА РЕСУРСА
                 </h1>
                 <p className="font-editorial-italic text-xl sm:text-2xl text-[#D6CFE0]">
@@ -404,7 +404,7 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
               </div>
 
               <Reveal variant="clip-title">
-                <h2 className="font-gazette-tall text-4xl sm:text-5xl lg:text-[54px] leading-[0.98] text-[#F4EFE6]">
+                <h2 className="font-gazette-tall text-4xl sm:text-5xl lg:text-[54px] leading-[1.14] text-[#F4EFE6]">
                   ПОЧЕМУ УСТАЛОСТЬ НЕ ПРОХОДИТ ЗА ВЫХОДНЫЕ
                 </h2>
               </Reveal>
@@ -543,7 +543,7 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
               </div>
 
               <Reveal variant="clip-title">
-                <h2 className="font-gazette-tall text-4xl sm:text-5xl lg:text-[54px] leading-[0.98] text-[#1C1629]">
+                <h2 className="font-gazette-tall text-4xl sm:text-5xl lg:text-[54px] leading-[1.14] text-[#1C1629]">
                   ОТ РАЗРОЗНЕННЫХ СОВЕТОВ К СИСТЕМЕ
                 </h2>
               </Reveal>

@@ -139,47 +139,67 @@ export const LocalProfileFooter: React.FC<LocalProfileFooterProps> = ({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            <div className="lg:col-span-6 space-y-4">
-              <h2 className="font-gazette-tall text-3xl sm:text-4xl lg:text-[44px] leading-[0.98] text-[#F4EFE6]">
-                СОХРАННОСТЬ ЗАПИСЕЙ И ПАМЯТКА
+            <div className="lg:col-span-5 space-y-4">
+              <h2 className="font-gazette-tall text-3xl sm:text-4xl lg:text-[44px] leading-[1.14] text-[#F4EFE6]">
+                ВАШИ ЗАПИСИ И ПАМЯТКА
               </h2>
 
               <p className="text-[15.5px] leading-[1.65] text-[#D6CFE0] max-w-xl">
-                Все оценки, листы и трекер хранятся только в памяти вашего
-                браузера — к ним нет доступа ни у кого со стороны. Вы можете
-                распечатать план в PDF или сохранить резервную копию файлом для
-                переноса на другое устройство. На общем рабочем компьютере после
-                завершения нажмите «Очистить данные».
+                Без регистрации: все тесты, листы и трекер хранятся только в
+                этом браузере. Если вы меняете устройство или чистите браузер,
+                скачайте файл записей — потом его можно загрузить обратно одним
+                кликом. На общем рабочем ПК после работы нажмите «Очистить всё».
               </p>
             </div>
 
-            <div className="lg:col-span-6 rounded-2xl bg-[#261F38]/85 border border-[#F4EFE6]/12 p-6">
+            <div className="lg:col-span-7 rounded-2xl bg-[#261F38]/85 border border-[#F4EFE6]/12 p-5 sm:p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={onOpenPrintPreview}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-semibold bg-[#F4EFE6] text-[#1F192E] transition-all duration-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(244,239,230,0.42)] min-h-[44px] cursor-pointer whitespace-nowrap"
+                  className="group flex items-start gap-3 rounded-xl px-4 py-3 text-left bg-[#F4EFE6] text-[#1F192E] transition-all duration-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(244,239,230,0.42)] min-h-[60px] cursor-pointer"
                 >
-                  <Printer className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>PDF-памятка</span>
+                  <Printer className="h-4 w-4 shrink-0 mt-0.5 text-[#523B7D]" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-semibold leading-snug">
+                      Памятка в PDF
+                    </span>
+                    <span className="block text-[12px] text-[#362E47]/85 leading-snug mt-0.5">
+                      Распечатать или сохранить план
+                    </span>
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleExportJson}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F4EFE6]/8 border border-[#F4EFE6]/25 text-[#F4EFE6] px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 hover:border-[#8BB0D4] hover:bg-[#8BB0D4]/15 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,176,212,0.32)] min-h-[44px] cursor-pointer whitespace-nowrap"
+                  className="group flex items-start gap-3 rounded-xl px-4 py-3 text-left bg-[#F4EFE6]/8 border border-[#F4EFE6]/25 text-[#F4EFE6] transition-all duration-200 hover:border-[#8BB0D4] hover:bg-[#8BB0D4]/15 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,176,212,0.32)] min-h-[60px] cursor-pointer"
                 >
-                  <Download className="h-4 w-4 shrink-0 text-[#8BB0D4]" aria-hidden="true" />
-                  <span>Сохранить (.json)</span>
+                  <Download className="h-4 w-4 shrink-0 mt-0.5 text-[#8BB0D4]" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-semibold leading-snug">
+                      Скачать файл записей
+                    </span>
+                    <span className="block text-[12px] text-[#D6CFE0]/80 leading-snug mt-0.5">
+                      Чтобы перенести на другой ПК
+                    </span>
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F4EFE6]/8 border border-[#F4EFE6]/25 text-[#F4EFE6] px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 hover:border-[#CBBEE4] hover:bg-[#523B7D]/40 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(107,80,158,0.38)] min-h-[44px] cursor-pointer whitespace-nowrap"
+                  className="group flex items-start gap-3 rounded-xl px-4 py-3 text-left bg-[#F4EFE6]/8 border border-[#F4EFE6]/25 text-[#F4EFE6] transition-all duration-200 hover:border-[#CBBEE4] hover:bg-[#523B7D]/40 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(107,80,158,0.38)] min-h-[60px] cursor-pointer"
                 >
-                  <Upload className="h-4 w-4 shrink-0 text-[#D6CFE0]" aria-hidden="true" />
-                  <span>Восстановить (.json)</span>
+                  <Upload className="h-4 w-4 shrink-0 mt-0.5 text-[#CBBEE4]" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-semibold leading-snug">
+                      Загрузить свои записи
+                    </span>
+                    <span className="block text-[12px] text-[#D6CFE0]/80 leading-snug mt-0.5">
+                      Вернуть из сохранённого файла
+                    </span>
+                  </span>
                 </button>
 
                 <input
@@ -189,21 +209,32 @@ export const LocalProfileFooter: React.FC<LocalProfileFooterProps> = ({
                   onChange={handleFileChange}
                   tabIndex={-1}
                   className="sr-only"
-                  aria-label="Загрузить резервную копию профиля JSON"
+                  aria-label="Загрузить сохранённый файл записей"
                 />
 
                 <button
                   type="button"
                   onClick={handleClearClick}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 hover:-translate-y-0.5 min-h-[44px] cursor-pointer whitespace-nowrap ${
+                  className={`group flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-200 hover:-translate-y-0.5 min-h-[60px] cursor-pointer ${
                     confirmReset
                       ? 'border-red-300 bg-red-600/85 text-white shadow-[0_0_22px_rgba(239,68,68,0.45)]'
                       : 'bg-[#F4EFE6]/5 border-[#F4EFE6]/20 text-[#D6CFE0] hover:border-red-300/65 hover:bg-red-500/20 hover:text-white hover:shadow-[0_0_18px_rgba(239,68,68,0.28)]'
                   }`}
                 >
-                  <Trash2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>
-                    {confirmReset ? 'Подтвердить удаление?' : 'Очистить данные'}
+                  <Trash2 className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-semibold leading-snug">
+                      {confirmReset ? 'Подтвердить удаление?' : 'Очистить всё'}
+                    </span>
+                    <span
+                      className={`block text-[12px] leading-snug mt-0.5 ${
+                        confirmReset ? 'text-white/90' : 'text-[#D6CFE0]/75'
+                      }`}
+                    >
+                      {confirmReset
+                        ? 'Нажмите ещё раз для удаления'
+                        : 'Стереть с этого устройства'}
+                    </span>
                   </span>
                 </button>
               </div>

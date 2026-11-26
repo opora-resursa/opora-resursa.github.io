@@ -15,6 +15,7 @@ const NAV_LINKS: { id: SectionId; label: string }[] = [
   { id: 'diagnostics', label: 'Самооценка' },
   { id: 'catalog', label: '30 методик' },
   { id: 'tracker', label: 'Трекер' },
+  { id: 'profile', label: 'Памятка и файл' },
 ];
 
 const MOBILE_LINKS: { id: SectionId; label: string }[] = [
@@ -23,7 +24,7 @@ const MOBILE_LINKS: { id: SectionId; label: string }[] = [
   { id: 'diagnostics', label: 'Самооценка' },
   { id: 'catalog', label: '30 методик' },
   { id: 'tracker', label: 'Трекер' },
-  { id: 'profile', label: 'Памятка PDF' },
+  { id: 'profile', label: 'Памятка и файл' },
 ];
 
 const RAIL_SLIDES: { id: SectionId; label: string }[] = [
@@ -33,6 +34,7 @@ const RAIL_SLIDES: { id: SectionId; label: string }[] = [
   { id: 'diagnostics', label: 'Самооценка' },
   { id: 'catalog', label: '30 методик' },
   { id: 'tracker', label: 'Трекер' },
+  { id: 'profile', label: 'Памятка и файл' },
 ];
 
 const SCROLL_KEYS = new Set([
@@ -45,8 +47,7 @@ const SCROLL_KEYS = new Set([
   ' ',
 ]);
 
-const easeInOutQuart = (t: number): number =>
-  t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
 
 export function useActiveSection(): {
   activeSection: SectionId;
@@ -206,7 +207,7 @@ export function useActiveSection(): {
         return;
       }
 
-      const durationMs = 680;
+      const durationMs = 260;
       const startTime = performance.now();
       let rafId = 0;
       let cancelled = false;
@@ -244,8 +245,8 @@ export function useActiveSection(): {
       const step = (now: number) => {
         if (cancelled) return;
         const elapsed = now - startTime;
-        const t = Math.min(1, elapsed / durationMs);
-        const eased = easeInOutQuart(t);
+        const t = Math.max(0, Math.min(1, elapsed / durationMs));
+        const eased = easeOutCubic(t);
         window.scrollTo({ top: startY + distance * eased, behavior: 'auto' });
 
         if (t < 1) {
@@ -334,10 +335,10 @@ export const TopNavAndRail: React.FC<TopNavAndRailProps> = ({
             </span>
           </button>
 
-          {/* Center: 4 Clean Links */}
+          {/* Center: 5 Clean Links */}
           <nav
             aria-label="Основные разделы"
-            className="hidden md:flex items-center gap-7"
+            className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-7"
           >
             {NAV_LINKS.map((item) => {
               const isActive =
@@ -350,7 +351,7 @@ export const TopNavAndRail: React.FC<TopNavAndRailProps> = ({
                   type="button"
                   onClick={() => onNavigate(item.id)}
                   aria-current={isActive ? 'location' : undefined}
-                  className={`relative py-1.5 text-[14.5px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 ${
+                  className={`relative py-1.5 text-[13.5px] lg:text-[14.5px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 ${
                     isDarkHeader
                       ? isActive
                         ? 'text-[#8BB0D4]'
