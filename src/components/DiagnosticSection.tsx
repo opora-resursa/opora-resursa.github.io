@@ -678,6 +678,16 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                         </div>
                       )}
 
+                      {!isEditingAnswers && answeredCount === QUESTIONS.length && (
+                        <button
+                          type="button"
+                          onClick={() => finalizeDiagnostic(answers)}
+                          className="btn-violet inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13.5px] font-semibold min-h-[40px] cursor-pointer"
+                        >
+                          <span>Показать результат</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         disabled={activeStep === QUESTIONS.length - 1}
@@ -764,18 +774,24 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                         </div>
 
                         <h3 className="font-editorial text-2xl sm:text-3xl leading-tight text-[#1C1629]">
-                          {overallAverage < 25
-                            ? 'Профилактический фокус — '
-                            : 'Приоритет внимания сейчас — '}
-                          <span className="text-[#523B7D]">
-                            {AXIS_DISPLAY[result.topAxes[0]].title.toLowerCase()}
-                          </span>
-                          {result.topAxes[1] && result.scores[result.topAxes[1]] >= 25 && (
+                          {overallAverage === 0 ? (
+                            'Нагрузка минимальна — профилактический фокус'
+                          ) : (
                             <>
-                              {', а также '}
-                              <span className="text-[#3D6A94]">
-                                {AXIS_DISPLAY[result.topAxes[1]].title.toLowerCase()}
+                              {overallAverage < 25
+                                ? 'Профилактический фокус — '
+                                : 'Приоритет внимания сейчас — '}
+                              <span className="text-[#523B7D]">
+                                {AXIS_DISPLAY[result.topAxes[0]].title.toLowerCase()}
                               </span>
+                              {result.topAxes[1] && result.scores[result.topAxes[1]] >= 25 && (
+                                <>
+                                  {', а также '}
+                                  <span className="text-[#3D6A94]">
+                                    {AXIS_DISPLAY[result.topAxes[1]].title.toLowerCase()}
+                                  </span>
+                                </>
+                              )}
                             </>
                           )}
                         </h3>
@@ -804,11 +820,13 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                                 aria-hidden="true"
                               />
                               <p>
-                                Уровень нагрузки сейчас заметно высок. При таком истощении
-                                важно не оставаться с ним наедине: помимо коротких пауз стоит
-                                обсудить пересмотр нагрузки с руководителем, обратиться за
-                                супервизией, поддержкой коллеги или очной консультацией
-                                специалиста.
+                                {overallAverage >= 65
+                                  ? 'Уровень нагрузки сейчас заметно высок.'
+                                  : 'В одной из зон нагрузка сейчас заметно высока.'}{' '}
+                                При таком истощении важно не оставаться с ним наедине:
+                                помимо коротких пауз стоит обсудить пересмотр нагрузки с
+                                руководителем, обратиться за супервизией, поддержкой
+                                коллеги или очной консультацией специалиста.
                               </p>
                             </div>
                           )}
@@ -872,12 +890,12 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                             {allPlanInTracker ? (
                               <>
                                 <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                                <span>План добавлен в трекер</span>
+                                <span>2 практики в трекере</span>
                               </>
                             ) : (
                               <>
                                 <PlusCircle className="h-4 w-4" aria-hidden="true" />
-                                <span>Добавить план в трекер</span>
+                                <span>Добавить 2 главные практики в трекер</span>
                               </>
                             )}
                           </button>

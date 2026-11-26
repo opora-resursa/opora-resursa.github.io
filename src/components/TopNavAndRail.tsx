@@ -306,12 +306,12 @@ export const TopNavAndRail: React.FC<TopNavAndRailProps> = ({
             : 'bg-[#FCF9F3]/92 border-[#1C1629]/10 text-[#1C1629]'
         }`}
       >
-        <div className="max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-[1220px] mx-auto px-3.5 sm:px-8 lg:px-12 h-16 flex items-center justify-between gap-2 sm:gap-4">
           {/* Left: Brand with subtle glowing sky-blue diamond */}
           <button
             type="button"
             onClick={() => onNavigate('top')}
-            className={`inline-flex items-center gap-2.5 cursor-pointer group rounded-lg px-1 -mx-1 py-1 focus:outline-none focus-visible:ring-2 ${
+            className={`inline-flex items-center gap-2 sm:gap-2.5 cursor-pointer group rounded-lg px-1 py-1 focus:outline-none focus-visible:ring-2 ${
               isDarkHeader
                 ? 'focus-visible:ring-[#8BB0D4]'
                 : 'focus-visible:ring-[#523B7D]'
@@ -321,7 +321,7 @@ export const TopNavAndRail: React.FC<TopNavAndRailProps> = ({
               aria-hidden="true"
               className="w-2.5 h-2.5 rotate-45 rounded-[2px] bg-[#8BB0D4] shadow-[0_0_12px_rgba(139,176,212,0.8)] transition-transform duration-200 group-hover:scale-110"
             />
-            <span className="font-masthead-title text-[18px] sm:text-[19px] whitespace-nowrap tracking-tight">
+            <span className="font-masthead-title text-[16.5px] sm:text-[19px] whitespace-nowrap tracking-tight">
               Опора ресурса
             </span>
           </button>
@@ -367,11 +367,11 @@ export const TopNavAndRail: React.FC<TopNavAndRailProps> = ({
           </nav>
 
           {/* Right: Tactile "Пауза 2 мин" + Mobile Menu */}
-          <div className="flex items-center gap-2 pr-1 md:pr-0">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={onOpenQuickSos}
-              className="btn-violet rounded-xl px-3.5 sm:px-4 py-2 text-[13px] sm:text-[13.5px] font-semibold inline-flex items-center gap-2 whitespace-nowrap cursor-pointer min-h-[40px]"
+              className="btn-violet rounded-xl px-2.5 sm:px-4 py-2 text-[12.5px] sm:text-[13.5px] font-semibold inline-flex items-center gap-1.5 sm:gap-2 whitespace-nowrap cursor-pointer min-h-[40px]"
             >
               <span
                 aria-hidden="true"
@@ -386,7 +386,7 @@ export const TopNavAndRail: React.FC<TopNavAndRailProps> = ({
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-label={mobileMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
               aria-expanded={mobileMenuOpen}
-              className={`md:hidden inline-flex items-center justify-center rounded-xl mr-0.5 min-w-[44px] min-h-[44px] cursor-pointer transition-colors ${
+              className={`md:hidden inline-flex items-center justify-center rounded-xl min-w-[42px] min-h-[42px] sm:min-w-[44px] sm:min-h-[44px] cursor-pointer transition-colors ${
                 isDarkHeader
                   ? 'bg-[#F4EFE6]/10 text-[#F4EFE6] hover:bg-[#F4EFE6]/18'
                   : 'bg-[#EFE8DC] text-[#1C1629] hover:bg-[#E5DDD0]'

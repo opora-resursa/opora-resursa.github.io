@@ -1024,9 +1024,9 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                             onChange={(e) =>
                               onSetResourceLevel(selectedDay, Number(e.target.value))
                             }
-                            onClick={() => {
+                            onClick={(e) => {
                               if (selectedDayLevel === null) {
-                                onSetResourceLevel(selectedDay, sliderDisplayValue);
+                                onSetResourceLevel(selectedDay, Number(e.currentTarget.value));
                               }
                             }}
                             className="energy-range"

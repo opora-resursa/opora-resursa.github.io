@@ -31,11 +31,27 @@ export function formatEntryDateLabel(entry: {
 }): string {
   if (entry.isoDate) {
     const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(entry.isoDate);
-    const parsed = match
-      ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
-      : new Date(entry.isoDate);
+    let parsed: Date | null = null;
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const candidate = new Date(year, month - 1, day);
+      if (
+        candidate.getFullYear() === year &&
+        candidate.getMonth() === month - 1 &&
+        candidate.getDate() === day
+      ) {
+        parsed = candidate;
+      }
+    } else {
+      const candidate = new Date(entry.isoDate);
+      if (!Number.isNaN(candidate.getTime())) {
+        parsed = candidate;
+      }
+    }
 
-    if (!Number.isNaN(parsed.getTime())) {
+    if (parsed) {
       const now = new Date();
       const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const yesterdayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
@@ -126,27 +142,46 @@ export function sanitizeDiagnostic(raw: unknown): DiagnosticResult | null {
   }
 
   if (!Array.isArray(raw.topAxes)) return null;
-  const topAxes = raw.topAxes.filter(isClusterId).slice(0, 2);
+  const topAxes: ClusterId[] = [];
+  for (const axis of raw.topAxes) {
+    if (isClusterId(axis) && !topAxes.includes(axis)) {
+      topAxes.push(axis);
+    }
+    if (topAxes.length === 2) break;
+  }
   if (topAxes.length === 0) return null;
 
-  const recommendedIds = Array.isArray(raw.recommendedIds)
-    ? raw.recommendedIds.filter(
-        (id): id is number =>
-          typeof id === 'number' &&
-          Number.isInteger(id) &&
-          METHODS.some((m) => m.id === id)
-      )
-    : [];
+  const fallbackPick = pickRecommendedMethods(scores);
+  for (const axis of fallbackPick.topAxes) {
+    if (topAxes.length < 2 && !topAxes.includes(axis)) {
+      topAxes.push(axis);
+    }
+  }
 
-  const finalRecommendedIds =
-    recommendedIds.length > 0
-      ? recommendedIds.slice(0, 4)
-      : pickRecommendedMethods(scores).recommendedIds;
+  const finalRecommendedIds: number[] = [];
+  if (Array.isArray(raw.recommendedIds)) {
+    for (const id of raw.recommendedIds) {
+      if (
+        typeof id === 'number' &&
+        Number.isInteger(id) &&
+        METHODS.some((m) => m.id === id) &&
+        !finalRecommendedIds.includes(id)
+      ) {
+        finalRecommendedIds.push(id);
+      }
+      if (finalRecommendedIds.length === 4) break;
+    }
+  }
+  for (const id of fallbackPick.recommendedIds) {
+    if (finalRecommendedIds.length < 4 && !finalRecommendedIds.includes(id)) {
+      finalRecommendedIds.push(id);
+    }
+  }
 
   const answers: DiagnosticAnswers = {};
   if (isPlainObject(raw.answers)) {
     for (const [k, v] of Object.entries(raw.answers)) {
-      if (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 4) {
+      if (typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 4) {
         answers[k] = v;
       }
     }
@@ -169,6 +204,7 @@ export function sanitizeDiagnostic(raw: unknown): DiagnosticResult | null {
 export function sanitizeThreeGoodThings(raw: unknown): ThreeGoodEntry[] {
   if (!Array.isArray(raw)) return [];
   const entries: ThreeGoodEntry[] = [];
+  const seenIds = new Set<string>();
   for (let i = 0; i < raw.length; i += 1) {
     const item = raw[i];
     if (!isPlainObject(item) || !Array.isArray(item.items)) continue;
@@ -179,10 +215,20 @@ export function sanitizeThreeGoodThings(raw: unknown): ThreeGoodEntry[] {
       .slice(0, 3);
     if (cleanedItems.length === 0) continue;
 
-    const id =
+    const baseId =
       typeof item.id === 'string' && item.id.trim()
         ? item.id.trim()
         : `refl-${i}-${Date.now()}`;
+    let id = baseId;
+    if (seenIds.has(id)) {
+      let suffix = 1;
+      while (seenIds.has(`${baseId}-${suffix}`)) {
+        suffix += 1;
+      }
+      id = `${baseId}-${suffix}`;
+    }
+    seenIds.add(id);
+
     const dateLabel =
       typeof item.dateLabel === 'string' && item.dateLabel.trim()
         ? item.dateLabel.trim()
@@ -308,36 +354,70 @@ export function loadAppState(): AppState {
 }
 
 function sanitizeHabits(habits: unknown[]): HabitRule[] {
-  return habits
-    .filter((h): h is HabitRule => isPlainObject(h))
-    .map((h, idx) => {
-      const rawTrigger = typeof h.trigger === 'string' ? h.trigger : '';
-      const rawAction = typeof h.action === 'string' ? h.action : '';
+  const result: HabitRule[] = [];
+  const seenIds = new Set<string>();
 
-      const trigger =
-        rawTrigger === 'Завершил(а) сложный приём или урок и есть 2 минуты тишины'
-          ? 'Завершил(а) сложный приём или урок, и есть 2 минуты тишины'
-          : rawTrigger;
+  for (let idx = 0; idx < habits.length; idx += 1) {
+    const h = habits[idx];
+    if (!isPlainObject(h)) continue;
 
-      const action = rawAction.includes('Паркую')
+    const rawTrigger = typeof h.trigger === 'string' ? h.trigger : '';
+    const rawAction = typeof h.action === 'string' ? h.action : '';
+
+    const trigger =
+      rawTrigger === 'Завершил(а) сложный приём или урок и есть 2 минуты тишины'
+        ? 'Завершил(а) сложный приём или урок, и есть 2 минуты тишины'
+        : rawTrigger;
+
+    const action =
+      h.id === 'seed-2' && rawAction.includes('Паркую')
         ? 'Выписываю незавершённые дела на завтра и отключаю рабочие чаты (№11)'
         : rawAction;
 
-      return {
-        id: typeof h.id === 'string' && h.id ? h.id : `habit-${idx}-${Date.now()}`,
-        trigger,
-        action,
-        methodId:
-          typeof h.methodId === 'number' && Number.isFinite(h.methodId)
-            ? h.methodId
-            : undefined,
-        checks:
-          Array.isArray(h.checks) && h.checks.length === 7
-            ? h.checks.map(Boolean)
-            : [false, false, false, false, false, false, false],
-      };
-    })
-    .filter((h) => h.trigger.trim() || h.action.trim());
+    if (!trigger.trim() && !action.trim()) continue;
+
+    const baseId =
+      typeof h.id === 'string' && h.id.trim()
+        ? h.id.trim()
+        : `habit-${idx}-${Date.now()}`;
+    let id = baseId;
+    if (seenIds.has(id)) {
+      const exactDuplicate = result.some(
+        (existing) =>
+          existing.id === baseId &&
+          existing.trigger.trim() === trigger.trim() &&
+          existing.action.trim() === action.trim()
+      );
+      if (exactDuplicate) continue;
+
+      let suffix = 1;
+      while (seenIds.has(`${baseId}-${suffix}`)) {
+        suffix += 1;
+      }
+      id = `${baseId}-${suffix}`;
+    }
+    seenIds.add(id);
+
+    const methodId =
+      typeof h.methodId === 'number' &&
+      Number.isInteger(h.methodId) &&
+      METHODS.some((m) => m.id === h.methodId)
+        ? h.methodId
+        : undefined;
+
+    result.push({
+      id,
+      trigger,
+      action,
+      methodId,
+      checks:
+        Array.isArray(h.checks) && h.checks.length === 7
+          ? h.checks.map(Boolean)
+          : [false, false, false, false, false, false, false],
+    });
+  }
+
+  return result;
 }
 
 export function saveAppState(state: AppState): void {
@@ -355,10 +435,12 @@ export function validateImportedBackup(data: unknown): AppState | null {
     'habits' in candidate ||
     'diagnostic' in candidate ||
     'resourceLevels' in candidate ||
-    'threeGoodThings' in candidate;
+    'threeGoodThings' in candidate ||
+    'worksheets' in candidate ||
+    'journals' in candidate;
   if (!hasKnownKey) return null;
 
-  const base = createDefaultState();
+  const base = createEmptyState();
   return {
     diagnostic: sanitizeDiagnostic(candidate.diagnostic),
     habits: Array.isArray(candidate.habits) ? sanitizeHabits(candidate.habits) : base.habits,

@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ChevronUp,
   Download,
+  HeartHandshake,
   Pause,
   Play,
   PlusCircle,
@@ -32,6 +33,7 @@ interface PracticeModalProps {
   modal: ModalState;
   worksheets: Record<number, Record<string, string>>;
   journals: Record<number, string>;
+  trackedMethodIds?: number[];
   onClose: () => void;
   onSelectMethod: (method: RegulationMethod, fromSos?: boolean) => void;
   onBackToSosPicker: () => void;
@@ -40,12 +42,14 @@ interface PracticeModalProps {
   onSaveJournal: (methodId: number, text: string) => void;
   onWipeJournal: (methodId: number) => void;
   onAddHabitFromModal: (trigger: string, action: string, methodId: number) => void;
+  onSaveToEvening?: (items: string[]) => void;
 }
 
 export const PracticeModal: React.FC<PracticeModalProps> = ({
   modal,
   worksheets,
   journals,
+  trackedMethodIds,
   onClose,
   onSelectMethod,
   onBackToSosPicker,
@@ -54,6 +58,7 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
   onSaveJournal,
   onWipeJournal,
   onAddHabitFromModal,
+  onSaveToEvening,
 }) => {
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const modalPanelRef = useRef<HTMLDivElement>(null);
@@ -155,16 +160,17 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
       <div
         ref={modalPanelRef}
         tabIndex={-1}
-        className="modal-card-in relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl focus:outline-none"
+        onClick={(e) => e.stopPropagation()}
+        className="modal-card-in relative flex flex-col w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl focus:outline-none"
         style={{
           background: '#FCF9F3',
           color: 'var(--ink)',
           boxShadow: 'var(--shadow-modal)',
         }}
       >
-        {/* Sticky Gradient Top Bar (Atelier Editorial Modal Language) */}
+        {/* Fixed Gradient Top Bar (Atelier Editorial Modal Language) */}
         <div
-          className="sticky top-0 z-20 flex items-start justify-between gap-4 px-4 sm:px-6 py-3.5 text-white"
+          className="shrink-0 flex items-start justify-between gap-4 px-4 sm:px-6 py-3.5 text-white"
           style={{ background: 'var(--grad-violet-deep)' }}
         >
           <div className="space-y-1 min-w-0">
@@ -224,7 +230,7 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-5 space-y-3.5">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
           {modal.type === 'sos-picker' ? (
             <div className="space-y-3.5">
               <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
@@ -374,6 +380,7 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
                     savedValues={worksheets[modal.method.id] ?? {}}
                     onChange={(vals) => onSaveWorksheet(modal.method.id, vals)}
                     onClear={() => onClearWorksheet(modal.method.id)}
+                    onSaveToEvening={onSaveToEvening}
                   />
                 )}
 
@@ -391,6 +398,10 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
                   <HabitBuilderWidget
                     key={modal.method.id}
                     method={modal.method}
+                    isAlreadyTracked={
+                      modal.method.id !== 8 &&
+                      Boolean(trackedMethodIds?.includes(modal.method.id))
+                    }
                     onSubmit={(trigger, action) =>
                       onAddHabitFromModal(trigger, action, modal.method.id)
                     }
@@ -603,6 +614,8 @@ const BreathingWidget: React.FC = () => {
             >
               {remainingMs === 0
                 ? 'Завершено'
+                : !running && remainingMs < totalDuration * 1000 && remainingMs > 0
+                ? 'Пауза'
                 : !running
                 ? 'Готовы начать'
                 : isInhale
@@ -847,7 +860,13 @@ const GuidedStepsTimerWidget: React.FC<{ method: RegulationMethod }> = ({
             ) : (
               <>
                 <Play className="h-4 w-4" />
-                <span>{overallDone ? 'Повторить' : 'Запустить'}</span>
+                <span>
+                  {overallDone
+                    ? 'Повторить'
+                    : stepIdx > 0 || secondsLeft < currentStep.seconds
+                    ? 'Продолжить'
+                    : 'Запустить'}
+                </span>
               </>
             )}
           </button>
@@ -885,7 +904,8 @@ const WorksheetWidget: React.FC<{
   savedValues: Record<string, string>;
   onChange: (values: Record<string, string>) => void;
   onClear: () => void;
-}> = ({ method, savedValues, onChange, onClear }) => {
+  onSaveToEvening?: (items: string[]) => void;
+}> = ({ method, savedValues, onChange, onClear, onSaveToEvening }) => {
   const fields = method.worksheetFields ?? [];
   const [confirmClear, setConfirmClear] = useState(false);
   const confirmTimerRef = useRef<number | null>(null);
@@ -902,6 +922,15 @@ const WorksheetWidget: React.FC<{
 
   const handleFieldChange = (fieldId: string, val: string) => {
     onChange({ ...savedValues, [fieldId]: val });
+  };
+
+  const handleSaveToEvening = () => {
+    if (!onSaveToEvening) return;
+    const filled = fields
+      .map((f) => savedValues[f.id]?.trim() ?? '')
+      .filter(Boolean);
+    if (filled.length === 0) return;
+    onSaveToEvening(filled);
   };
 
   const handleDownloadTxt = () => {
@@ -984,15 +1013,29 @@ const WorksheetWidget: React.FC<{
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <button
-          type="button"
-          disabled={!hasContent}
-          onClick={handleDownloadTxt}
-          className="btn-violet inline-flex items-center gap-2 rounded-xl px-5 py-2.5 type-pill disabled:opacity-45 disabled:cursor-not-allowed min-h-[42px] cursor-pointer"
-        >
-          <Download className="h-4 w-4" />
-          <span>Скачать лист (.txt)</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            disabled={!hasContent}
+            onClick={handleDownloadTxt}
+            className="btn-violet inline-flex items-center gap-2 rounded-xl px-5 py-2.5 type-pill disabled:opacity-45 disabled:cursor-not-allowed min-h-[42px] cursor-pointer"
+          >
+            <Download className="h-4 w-4" />
+            <span>Скачать лист (.txt)</span>
+          </button>
+
+          {method.id === 28 && onSaveToEvening && (
+            <button
+              type="button"
+              disabled={!hasContent}
+              onClick={handleSaveToEvening}
+              className="btn-violet inline-flex items-center gap-2 rounded-xl px-5 py-2.5 type-pill disabled:opacity-45 disabled:cursor-not-allowed min-h-[42px] cursor-pointer"
+            >
+              <HeartHandshake className="h-4 w-4" aria-hidden="true" />
+              <span>Сохранить в «Вечерний итог»</span>
+            </button>
+          )}
+        </div>
 
         <button
           type="button"
@@ -1080,12 +1123,17 @@ const JournalWidget: React.FC<{
 
   const handleDownload = () => {
     if (!hasText) return;
-    const content = `${method.title}\n${new Date().toLocaleDateString('ru-RU')}\n\n${savedText}`;
+    const now = new Date();
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}-${String(now.getDate()).padStart(2, '0')}`;
+    const content = `${method.title}\n${now.toLocaleDateString('ru-RU')}\n\n${savedText}`;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `expressive-writing-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.download = `expressive-writing-${localDate}.txt`;
     a.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
@@ -1240,12 +1288,13 @@ const JournalWidget: React.FC<{
 };
 
 /* ------------------------------------------------------------------ */
-/* 5. HABIT BUILDER WIDGET (#8, #9, #12, #28, #30)                    */
+/* 5. HABIT BUILDER WIDGET (#8, #9, #12, #30)                         */
 /* ------------------------------------------------------------------ */
 const HabitBuilderWidget: React.FC<{
   method: RegulationMethod;
+  isAlreadyTracked?: boolean;
   onSubmit: (trigger: string, action: string) => void;
-}> = ({ method, onSubmit }) => {
+}> = ({ method, isAlreadyTracked = false, onSubmit }) => {
   const [trigger, setTrigger] = useState(
     method.defaultTrigger ?? 'В конце рабочего дня или в короткой паузе'
   );
@@ -1256,10 +1305,13 @@ const HabitBuilderWidget: React.FC<{
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!trigger.trim() || !action.trim()) return;
+    if (submitted || isAlreadyTracked || !trigger.trim() || !action.trim()) return;
     setSubmitted(true);
     onSubmit(trigger.trim(), action.trim());
   };
+
+  const isDisabled =
+    submitted || isAlreadyTracked || !trigger.trim() || !action.trim();
 
   return (
     <form
@@ -1274,6 +1326,21 @@ const HabitBuilderWidget: React.FC<{
         Настройте правило «если — то» под свой рабочий день и добавьте его в
         недельный трекер:
       </p>
+
+      {isAlreadyTracked && (
+        <div
+          role="status"
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12.5px] font-semibold"
+          style={{
+            background: 'var(--sky-surface)',
+            border: '1px solid var(--sky-border)',
+            color: 'var(--sky-ink)',
+          }}
+        >
+          <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>Эта практика уже есть в вашем трекере</span>
+        </div>
+      )}
 
       <div className="space-y-3">
         <div className="space-y-1">
@@ -1323,13 +1390,13 @@ const HabitBuilderWidget: React.FC<{
 
       <button
         type="submit"
-        disabled={submitted || !trigger.trim() || !action.trim()}
+        disabled={isDisabled}
         className="btn-violet inline-flex items-center gap-2 rounded-xl px-5 py-2.5 type-pill disabled:opacity-45 disabled:cursor-not-allowed min-h-[44px] cursor-pointer"
       >
-        {submitted ? (
+        {submitted || isAlreadyTracked ? (
           <>
             <Check className="h-4 w-4" />
-            <span>Добавлено в трекер</span>
+            <span>{submitted ? 'Добавлено в трекер' : 'Уже в трекере'}</span>
           </>
         ) : (
           <>

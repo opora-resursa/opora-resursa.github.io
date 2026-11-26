@@ -63,7 +63,7 @@ export const Reveal: React.FC<RevealProps> = ({
     if (!node) return;
 
     const isInOrAboveViewport = () =>
-      node.getBoundingClientRect().top < window.innerHeight * 0.98;
+      node.getBoundingClientRect().top < window.innerHeight + 60;
 
     if (isInOrAboveViewport()) {
       setVisible(true);
@@ -95,7 +95,7 @@ export const Reveal: React.FC<RevealProps> = ({
           }
         }
       },
-      { threshold: 0.01, rootMargin: '0px 0px -12px 0px' }
+      { threshold: 0.01, rootMargin: '60px 0px 80px 0px' }
     );
 
     observer.observe(node);

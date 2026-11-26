@@ -301,18 +301,16 @@ export const PrintSheetContent: React.FC<{
           .replace('.', ',')
       : null;
 
-  const hasEveningEntries =
-    options.includeEvening && state.threeGoodThings.length > 0;
   const hasAnySection =
     options.includeDiagnostic ||
     options.includeTracker ||
     options.includeSosCard ||
-    hasEveningEntries;
+    options.includeEvening;
 
   return (
     <article className="text-[#1C1629] space-y-4 text-[12px] leading-[1.42]">
       {/* 1. Editorial Masthead Header */}
-      <header className="space-y-2.5">
+      <div className="space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-[9.5px] font-gazette-mono uppercase tracking-[0.09em] text-[#615875]">
           <span>№ 01 · ЛИЧНАЯ ПАМЯТКА САМОРЕГУЛЯЦИИ</span>
           <span className="font-semibold text-[#38255C]">Опора ресурса</span>
@@ -347,10 +345,10 @@ export const PrintSheetContent: React.FC<{
             </div>
           )}
         </div>
-      </header>
+      </div>
 
       {!hasAnySection && (
-        <div className="rounded-xl bg-[#FAF7F1] border border-[#1C1629]/15 p-5 text-center text-[12.5px] text-[#615875]">
+        <div className="print:hidden rounded-xl bg-[#FAF7F1] border border-[#1C1629]/15 p-5 text-center text-[12.5px] text-[#615875]">
           Ни один раздел не выбран — отметьте нужные блоки в панели фильтрации
           выше, чтобы сформировать печатную памятку.
         </div>
@@ -680,41 +678,63 @@ export const PrintSheetContent: React.FC<{
       )}
 
       {/* 5. Block 4 · Вечерний итог (Метод №28) */}
-      {hasEveningEntries && (
+      {options.includeEvening && (
         <section className="space-y-2 print-card">
           <div className="flex items-baseline justify-between gap-2 border-b border-[#1C1629]/20 pb-1">
             <h2 className="font-editorial text-[15px] text-[#1F192E]">
               4. Вечерний итог (Метод №28)
             </h2>
-            {state.threeGoodThings.length > 4 && (
+            {state.threeGoodThings.length > 4 ? (
               <span className="font-gazette-mono text-[9.5px] text-[#615875]">
                 Показаны 4 из {state.threeGoodThings.length} записей
               </span>
-            )}
+            ) : state.threeGoodThings.length === 0 ? (
+              <span className="font-gazette-mono text-[9.5px] uppercase tracking-wider text-[#615875]">
+                Бланк для записи ручкой
+              </span>
+            ) : null}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-2.5">
-            {state.threeGoodThings.slice(0, 4).map((entry) => (
-              <div
-                key={entry.id}
-                className="print-card rounded-lg bg-[#FAF7F1] border border-[#1C1629]/12 p-2.5 space-y-1"
-              >
-                <p className="font-gazette-mono text-[10px] font-bold uppercase tracking-wider text-[#523B7D]">
-                  {formatEntryDateLabel(entry)}
-                </p>
-                <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-[#362E47]">
-                  {entry.items.slice(0, 3).map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
+          {state.threeGoodThings.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-2.5">
+              {state.threeGoodThings.slice(0, 4).map((entry) => (
+                <div
+                  key={entry.id}
+                  className="print-card rounded-lg bg-[#FAF7F1] border border-[#1C1629]/12 p-2.5 space-y-1"
+                >
+                  <p className="font-gazette-mono text-[10px] font-bold uppercase tracking-wider text-[#523B7D]">
+                    {formatEntryDateLabel(entry)}
+                  </p>
+                  <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-[#362E47]">
+                    {entry.items.slice(0, 3).map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl bg-[#FAF7F1] border border-[#1C1629]/15 px-3.5 py-3 space-y-2.5">
+              <p className="font-gazette-mono text-[10px] uppercase tracking-wider text-[#615875]">
+                Три небольших хороших события дня · Дата: ____________
+              </p>
+              <div className="space-y-2.5">
+                {[1, 2, 3].map((num) => (
+                  <div key={num} className="flex items-end gap-2 text-[11px]">
+                    <span className="font-gazette-mono font-bold text-[#523B7D] shrink-0 w-4">
+                      {num}.
+                    </span>
+                    <span className="flex-1 border-b border-dashed border-[#1C1629]/25 h-4" />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </section>
       )}
 
       {/* 6. Editorial Print Footer */}
-      <footer className="border-t border-[#1C1629]/20 pt-2.5 mt-4 flex flex-wrap justify-between gap-2 text-[10px] text-[#615875]">
+      <div className="border-t border-[#1C1629]/20 pt-2.5 mt-4 flex flex-wrap justify-between gap-2 text-[10px] text-[#615875]">
         <span>
           Опора ресурса · https://opora-resursa.github.io/ · Сформировано локально
           в вашем браузере
@@ -723,7 +743,7 @@ export const PrintSheetContent: React.FC<{
           Не заменяет очную медицинскую или психотерапевтическую помощь при
           выраженном истощении.
         </span>
-      </footer>
+      </div>
     </article>
   );
 };
@@ -838,6 +858,12 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
   if (!isOpen) return null;
 
+  const hasAnySection =
+    options.includeDiagnostic ||
+    options.includeTracker ||
+    options.includeSosCard ||
+    options.includeEvening;
+
   const toggleOption = (key: keyof PrintOptions) => {
     onChangeOptions({
       ...options,
@@ -927,7 +953,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                 <span>{label}</span>
                 {emptyEveningHint && (
                   <span className="text-[11px] font-normal text-[#615875]">
-                    (нет записей)
+                    (бланк)
                   </span>
                 )}
               </button>
@@ -959,8 +985,9 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
             </button>
             <button
               type="button"
+              disabled={!hasAnySection}
               onClick={() => window.print()}
-              className="btn-violet inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 type-pill min-h-[44px] cursor-pointer"
+              className="btn-violet inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 type-pill min-h-[44px] cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
             >
               <Printer className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span>Сохранить в PDF / Печать</span>

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RegulationMethod } from './data/methods';
 import { AppState, DiagnosticResult } from './types/app';
 import {
-  createDefaultState,
   createEmptyState,
   loadAppState,
   saveAppState,
@@ -34,6 +33,8 @@ export function App() {
   const [toast, setToast] = useState<ToastData | null>(null);
   const toastIdRef = useRef(0);
   const toastTimerRef = useRef<number | null>(null);
+  const habitsRef = useRef(state.habits);
+  habitsRef.current = state.habits;
   const { activeSection, navigateToSection, scrollProgress, isDarkHeader } =
     useActiveSection();
 
@@ -49,18 +50,21 @@ export function App() {
     };
   }, []);
 
-  const showToast = useCallback((message: string) => {
-    if (toastTimerRef.current !== null) {
-      window.clearTimeout(toastTimerRef.current);
-    }
-    toastIdRef.current += 1;
-    const id = toastIdRef.current;
-    setToast({ id, message });
-    toastTimerRef.current = window.setTimeout(() => {
-      setToast((curr) => (curr?.id === id ? null : curr));
-      toastTimerRef.current = null;
-    }, 3600);
-  }, []);
+  const showToast = useCallback(
+    (message: string, tone: 'success' | 'error' = 'success') => {
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+      toastIdRef.current += 1;
+      const id = toastIdRef.current;
+      setToast({ id, message, tone });
+      toastTimerRef.current = window.setTimeout(() => {
+        setToast((curr) => (curr?.id === id ? null : curr));
+        toastTimerRef.current = null;
+      }, 3600);
+    },
+    []
+  );
 
   const handleDiagnosticComplete = (result: DiagnosticResult) => {
     setState((prev) => ({ ...prev, diagnostic: result }));
@@ -94,7 +98,7 @@ export function App() {
 
   const handleAddMethodToTracker = useCallback(
     (method: RegulationMethod) => {
-      if (state.habits.some((h) => h.methodId === method.id)) {
+      if (habitsRef.current.some((h) => h.methodId === method.id)) {
         showToast('Эта практика уже есть в вашем трекере');
         return;
       }
@@ -104,17 +108,87 @@ export function App() {
       const action =
         method.defaultAction ??
         `Практика «${method.shortTitle}» (№${method.id})`;
-      addHabitRule(trigger, action, method.id);
+
+      setState((prev) => {
+        if (prev.habits.some((h) => h.methodId === method.id)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          habits: [
+            ...prev.habits,
+            {
+              id: `habit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              trigger,
+              action,
+              methodId: method.id,
+              checks: [false, false, false, false, false, false, false],
+            },
+          ],
+        };
+      });
+      showToast('Правило добавлено в трекер привычек');
     },
-    [state.habits, addHabitRule, showToast]
+    [showToast]
+  );
+
+  const handleAddHabitFromModal = useCallback(
+    (trigger: string, action: string, methodId: number) => {
+      const normTrigger = trigger.trim().toLowerCase();
+      const normAction = action.trim().toLowerCase();
+      const hasDuplicate = (habits: AppState['habits']) =>
+        habits.some(
+          (h) =>
+            (methodId !== 8 && h.methodId === methodId) ||
+            (h.trigger.trim().toLowerCase() === normTrigger &&
+              h.action.trim().toLowerCase() === normAction)
+        );
+
+      if (hasDuplicate(habitsRef.current)) {
+        setModal({ type: 'closed' });
+        showToast('Эта практика уже есть в вашем трекере');
+        return;
+      }
+
+      setState((prev) => {
+        if (hasDuplicate(prev.habits)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          habits: [
+            ...prev.habits,
+            {
+              id: `habit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              trigger,
+              action,
+              methodId,
+              checks: [false, false, false, false, false, false, false],
+            },
+          ],
+        };
+      });
+      setModal({ type: 'closed' });
+      showToast('Правило добавлено в трекер привычек');
+    },
+    [showToast]
   );
 
   const handleAddPlanToTracker = useCallback(
     (methods: RegulationMethod[]) => {
-      const newRules = methods
-        .filter((m) => !state.habits.some((h) => h.methodId === m.id))
-        .map((m) => ({
-          id: `habit-plan-${m.id}-${Date.now()}`,
+      const uniqueMethods = Array.from(
+        new Map(methods.map((m) => [m.id, m])).values()
+      );
+      const existingIds = new Set(
+        habitsRef.current
+          .map((h) => h.methodId)
+          .filter((id): id is number => typeof id === 'number')
+      );
+      const baseTs = Date.now();
+      const newRules = uniqueMethods
+        .filter((m) => !existingIds.has(m.id))
+        .map((m, idx) => ({
+          id: `habit-plan-${m.id}-${baseTs}-${idx}`,
           trigger:
             m.defaultTrigger ??
             `Ситуация: ${m.situationTag.toLowerCase()}`,
@@ -131,9 +205,12 @@ export function App() {
       }
 
       setState((prev) => {
-        const filtered = newRules.filter(
-          (r) => !prev.habits.some((h) => h.methodId === r.methodId)
+        const prevIds = new Set(
+          prev.habits
+            .map((h) => h.methodId)
+            .filter((id): id is number => typeof id === 'number')
         );
+        const filtered = newRules.filter((r) => !prevIds.has(r.methodId));
         if (filtered.length === 0) return prev;
         return {
           ...prev,
@@ -141,13 +218,18 @@ export function App() {
         };
       });
 
-      showToast(
-        newRules.length === 1
-          ? '1 рекомендованное правило добавлено в трекер'
-          : 'Два рекомендованных правила добавлены в ваш трекер'
-      );
+      const count = newRules.length;
+      const mod10 = count % 10;
+      const mod100 = count % 100;
+      if (mod10 === 1 && mod100 !== 11) {
+        showToast(`${count} рекомендованное правило добавлено в трекер`);
+      } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+        showToast(`${count} рекомендованных правила добавлены в трекер`);
+      } else {
+        showToast(`${count} рекомендованных правил добавлены в трекер`);
+      }
     },
-    [state.habits, showToast]
+    [showToast]
   );
 
   const handleShowRecommendedInCatalog = () => {
@@ -273,7 +355,10 @@ export function App() {
       const parsed = JSON.parse(jsonString);
       const validated = validateImportedBackup(parsed);
       if (!validated) {
-        showToast('Не удалось прочитать резервную копию: неверный формат файла');
+        showToast(
+          'Не удалось прочитать резервную копию: неверный формат файла',
+          'error'
+        );
         return;
       }
       setState(validated);
@@ -282,21 +367,24 @@ export function App() {
       }
       showToast('Резервная копия успешно восстановлена');
     } catch {
-      showToast('Файл повреждён или не является корректным JSON');
+      showToast('Файл повреждён или не является корректным JSON', 'error');
     }
   };
 
   const handleClearSampleData = () => {
-    setState(createEmptyState());
-    setOnlyRecommended(false);
+    setState((prev) => ({
+      ...prev,
+      habits: [],
+      resourceLevels: [null, null, null, null, null, null, null],
+      threeGoodThings: [],
+    }));
     showToast('Трекер очищен — можно заполнять с чистого листа');
   };
 
   const handleResetAllData = () => {
-    const fresh = createDefaultState();
-    setState(fresh);
+    setState(createEmptyState());
     setOnlyRecommended(false);
-    showToast('Локальные данные очищены');
+    showToast('Все локальные данные удалены');
   };
 
   const trackedMethodIds = useMemo(
@@ -386,6 +474,7 @@ export function App() {
         modal={modal}
         worksheets={state.worksheets}
         journals={state.journals}
+        trackedMethodIds={trackedMethodIds}
         onClose={() => setModal({ type: 'closed' })}
         onSelectMethod={(method, fromSos) =>
           setModal({ type: 'method', method, fromSos })
@@ -395,10 +484,8 @@ export function App() {
         onClearWorksheet={handleClearWorksheet}
         onSaveJournal={handleSaveJournal}
         onWipeJournal={handleWipeJournal}
-        onAddHabitFromModal={(trigger, action, methodId) => {
-          addHabitRule(trigger, action, methodId);
-          setModal({ type: 'closed' });
-        }}
+        onAddHabitFromModal={handleAddHabitFromModal}
+        onSaveToEvening={handleSaveThreeGood}
       />
 
       <Toast toast={toast} onDismiss={() => setToast(null)} />
