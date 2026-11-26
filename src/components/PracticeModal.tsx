@@ -204,8 +204,8 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
                     №{String(modal.method.id).padStart(2, '0')} ·{' '}
                     {CLUSTER_META[modal.method.cluster].label}
                   </span>
-                  <span className="type-kicker text-white/85">
-                    · {modal.method.durationLabel}
+                  <span className="inline-flex items-center rounded-full bg-white/12 px-2.5 py-0.5 type-kicker text-white/90 whitespace-nowrap">
+                    {modal.method.durationLabel}
                   </span>
                 </div>
                 <h2
@@ -573,6 +573,10 @@ const BreathingWidget: React.FC = () => {
         </div>
       </div>
 
+      <p className="text-[12.5px] leading-snug" style={{ color: 'var(--ink-3)' }}>
+        При нехватке воздуха переключитесь на более мягкий темп или на внешнее заземление (№19).
+      </p>
+
       {/* Animated SVG Breathing Ring */}
       <div className="flex flex-col items-center justify-center py-1 space-y-3">
         <div className="relative flex items-center justify-center w-36 h-36 sm:w-44 sm:h-44 rounded-full">
@@ -892,6 +896,10 @@ const GuidedStepsTimerWidget: React.FC<{ method: RegulationMethod }> = ({
           <span>Сначала</span>
         </button>
       </div>
+
+      <p className="text-[12.5px] leading-snug" style={{ color: 'var(--ink-3)' }}>
+        Шаги переключаются визуально и без звука — можно идти в своём темпе.
+      </p>
     </div>
   );
 };
@@ -1249,12 +1257,15 @@ const JournalWidget: React.FC<{
           }}
         />
         <div
-          className="flex items-center justify-between type-kicker text-[10.5px]"
+          className="flex flex-wrap items-center justify-between gap-2 type-kicker text-[10.5px]"
           style={{ color: 'var(--ink-3)' }}
         >
-          <span>Слов: {wordCount}</span>
+          <span className="whitespace-nowrap">Слов: {wordCount}</span>
           <span>Хранится только на вашем устройстве</span>
         </div>
+        <p className="text-[12.5px] leading-snug" style={{ color: 'var(--ink-3)' }}>
+          Запись сохраняется в памяти этого браузера. На общем рабочем компьютере нажмите «Удалить без следа» после завершения.
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

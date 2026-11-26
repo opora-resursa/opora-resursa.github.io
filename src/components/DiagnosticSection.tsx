@@ -55,7 +55,7 @@ const QUESTIONS: DiagnosticQuestion[] = [
   {
     id: 'q6',
     axis: 'boundaries',
-    text: 'Сложно ли вам спокойно отказывать в дополнительных поручениях и отключать рабочие чаты вечером?',
+    text: 'Сложно ли вам отключать рабочие чаты и мысленно завершать дела после окончания смены?',
     hint: 'Границы между работой и личным временем',
   },
   {
@@ -67,7 +67,7 @@ const QUESTIONS: DiagnosticQuestion[] = [
   {
     id: 'q8',
     axis: 'resource',
-    text: 'Стало ли труднее замечать в обычном дне небольшие тёплые моменты и смысл своей работы?',
+    text: 'Стало ли труднее замечать в обычном дне небольшие тёплые и приятные моменты?',
     hint: 'Ощущение смысла и тепла в обычном дне',
   },
 ];
@@ -84,7 +84,7 @@ const SCALE_OPTIONS = [
   { value: 1, label: 'Редко' },
   { value: 2, label: 'Иногда' },
   { value: 3, label: 'Часто' },
-  { value: 4, label: 'Почти каждый день' },
+  { value: 4, label: 'Почти ежедневно' },
 ];
 
 const AXIS_DISPLAY: Record<
@@ -327,6 +327,17 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
     if (!result) return false;
     return (
       overallAverage >= 65 || Math.max(...Object.values(result.scores)) >= 75
+    );
+  }, [result, overallAverage]);
+
+  const isUniformLoad = useMemo(() => {
+    if (!result) return false;
+    const { body, mind, boundaries, resource } = result.scores;
+    return (
+      body === mind &&
+      mind === boundaries &&
+      boundaries === resource &&
+      overallAverage >= 25
     );
   }, [result, overallAverage]);
 
@@ -611,7 +622,7 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                           return (
                             <label
                               key={opt.value}
-                              className={`flex items-center justify-center text-center rounded-xl px-3 py-3 text-[13.5px] sm:text-[14px] font-medium cursor-pointer min-h-[48px] leading-tight select-none transition-all duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#523B7D] has-[:focus-visible]:ring-offset-2 ${
+                              className={`flex items-center justify-center text-center rounded-xl px-2 py-3 text-[12.5px] lg:text-[13.5px] font-medium cursor-pointer min-h-[48px] leading-tight select-none transition-all duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#523B7D] has-[:focus-visible]:ring-offset-2 ${
                                 isChecked
                                   ? 'btn-violet shadow-[0_6px_16px_-3px_rgba(82,59,125,0.45)]'
                                   : 'bg-[#FCF9F3]/60 text-[#312945] hover:bg-[#FCF9F3] hover:text-[#523B7D] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(28,22,41,0.08)]'
@@ -776,6 +787,8 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                         <h3 className="font-editorial text-2xl sm:text-3xl leading-tight text-[#1C1629]">
                           {overallAverage === 0 ? (
                             'Нагрузка минимальна — профилактический фокус'
+                          ) : isUniformLoad ? (
+                            'Нагрузка распределена равномерно по всем 4 зонам'
                           ) : (
                             <>
                               {overallAverage < 25
@@ -810,6 +823,13 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                               баланса.
                             </p>
                           )}
+                          {overallAverage >= 25 && !isHighLoad && (
+                            <p className="rounded-xl p-3.5 text-[14.5px] bg-[#ECE6F6]/70 border-l-[3px] border-l-[#523B7D] text-[#38255C]">
+                              Нагрузка сейчас ощутима — это ориентир для профилактики, а не
+                              диагноз. Короткие паузы в приоритетных зонах помогут удержать
+                              ресурс.
+                            </p>
+                          )}
                           {isHighLoad && (
                             <div
                               role="note"
@@ -819,15 +839,31 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                                 className="h-5 w-5 shrink-0 mt-0.5 text-[#7A4469]"
                                 aria-hidden="true"
                               />
-                              <p>
-                                {overallAverage >= 65
-                                  ? 'Уровень нагрузки сейчас заметно высок.'
-                                  : 'В одной из зон нагрузка сейчас заметно высока.'}{' '}
-                                При таком истощении важно не оставаться с ним наедине:
-                                помимо коротких пауз стоит обсудить пересмотр нагрузки с
-                                руководителем, обратиться за супервизией, поддержкой
-                                коллеги или очной консультацией специалиста.
-                              </p>
+                              <div className="space-y-1.5">
+                                <p>
+                                  {overallAverage >= 65
+                                    ? 'Уровень нагрузки сейчас заметно высок.'
+                                    : 'В одной из зон нагрузка сейчас заметно высока.'}{' '}
+                                  При таком истощении важно не оставаться с ним наедине:
+                                  помимо коротких пауз стоит по возможности обсудить пересмотр
+                                  нагрузки с руководителем, обратиться за супервизией,
+                                  поддержкой коллеги или очной консультацией специалиста.
+                                </p>
+                                <p className="text-[13.5px]">
+                                  Не пытайтесь выполнить весь план сразу — выберите одну самую
+                                  простую 2-минутную паузу. Если подавленность или нарушения
+                                  сна держатся дольше двух недель, обратитесь к врачу или
+                                  психотерапевту. Бесплатная круглосуточная поддержка:{' '}
+                                  <span className="font-semibold whitespace-nowrap">
+                                    8-800-333-44-34
+                                  </span>{' '}
+                                  (анонимно) ·{' '}
+                                  <span className="font-semibold whitespace-nowrap">
+                                    +7 (495) 989-50-50
+                                  </span>{' '}
+                                  (линия МЧС).
+                                </p>
+                              </div>
                             </div>
                           )}
                         </div>

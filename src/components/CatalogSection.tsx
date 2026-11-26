@@ -453,9 +453,9 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
               key={shuffleKey}
               className="shuffle-pop rounded-2xl p-[1.5px] bg-gradient-to-r from-[#523B7D]/45 via-[#3D6A94]/45 to-[#7A4469]/35 shadow-[0_10px_28px_-12px_rgba(82,59,125,0.22)]"
             >
-              <div className="rounded-[14.5px] bg-[#FCF9F3] p-4 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-                <div className="space-y-1 min-w-0">
-                  <span className="type-kicker text-[#3D6A94]">
+              <div className="relative rounded-[14.5px] bg-[#FCF9F3] p-4 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+                <div className="space-y-1 min-w-0 pr-10 sm:pr-0">
+                  <span className="type-kicker text-[#3D6A94] block">
                     Идея на ближайший перерыв · {randomPauseMethod.durationLabel}
                   </span>
                   <h3 className="font-editorial text-[19px] leading-snug text-[#1C1629]">
@@ -466,7 +466,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0 sm:pr-11">
                   <button
                     type="button"
                     onClick={() => onOpenMethod(randomPauseMethod)}
@@ -483,16 +483,17 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                     <Shuffle className="h-3.5 w-3.5 text-[#523B7D]" aria-hidden="true" />
                     <span>Другую</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setRandomPauseMethod(null)}
-                    aria-label="Скрыть карточку случайной паузы"
-                    title="Закрыть"
-                    className="inline-flex items-center justify-center rounded-xl h-[38px] w-[38px] text-[#615875] hover:text-[#1C1629] hover:bg-[#EFE8DC] transition-colors cursor-pointer"
-                  >
-                    <X className="h-4 w-4" aria-hidden="true" />
-                  </button>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setRandomPauseMethod(null)}
+                  aria-label="Скрыть карточку случайной паузы"
+                  title="Закрыть"
+                  className="absolute top-2.5 right-2.5 inline-flex items-center justify-center rounded-xl h-[38px] w-[38px] text-[#615875] hover:text-[#1C1629] hover:bg-[#EFE8DC] transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
               </div>
             </div>
           )}
@@ -605,7 +606,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                               type="button"
                               onClick={() => toggleEvidence(method.id)}
                               aria-expanded={isEvidenceOpen}
-                              className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#3D6A94] underline underline-offset-4 cursor-pointer transition-opacity hover:opacity-80"
+                              className="inline-flex items-center gap-1 min-h-[38px] py-1.5 -my-1 text-[13px] font-semibold text-[#3D6A94] underline underline-offset-4 cursor-pointer transition-opacity hover:opacity-80"
                             >
                               <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>Научная справка</span>

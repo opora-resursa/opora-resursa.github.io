@@ -148,7 +148,8 @@ export const LocalProfileFooter: React.FC<LocalProfileFooterProps> = ({
                 Все оценки, листы и трекер хранятся только в памяти вашего
                 браузера — к ним нет доступа ни у кого со стороны. Вы можете
                 распечатать план в PDF или сохранить резервную копию файлом для
-                переноса на другое устройство.
+                переноса на другое устройство. На общем рабочем компьютере после
+                завершения нажмите «Очистить данные».
               </p>
             </div>
 
@@ -157,25 +158,25 @@ export const LocalProfileFooter: React.FC<LocalProfileFooterProps> = ({
                 <button
                   type="button"
                   onClick={onOpenPrintPreview}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[13.5px] font-semibold bg-[#F4EFE6] text-[#1F192E] transition-all duration-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(244,239,230,0.42)] min-h-[44px] cursor-pointer whitespace-nowrap"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-semibold bg-[#F4EFE6] text-[#1F192E] transition-all duration-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(244,239,230,0.42)] min-h-[44px] cursor-pointer whitespace-nowrap"
                 >
                   <Printer className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>PDF-памятка (печать)</span>
+                  <span>PDF-памятка</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleExportJson}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F4EFE6]/8 border border-[#F4EFE6]/25 text-[#F4EFE6] px-4 py-3 text-[13.5px] font-semibold transition-all duration-200 hover:border-[#8BB0D4] hover:bg-[#8BB0D4]/15 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,176,212,0.32)] min-h-[44px] cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F4EFE6]/8 border border-[#F4EFE6]/25 text-[#F4EFE6] px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 hover:border-[#8BB0D4] hover:bg-[#8BB0D4]/15 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,176,212,0.32)] min-h-[44px] cursor-pointer whitespace-nowrap"
                 >
                   <Download className="h-4 w-4 shrink-0 text-[#8BB0D4]" aria-hidden="true" />
-                  <span>Сохранить копию (.json)</span>
+                  <span>Сохранить (.json)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F4EFE6]/8 border border-[#F4EFE6]/25 text-[#F4EFE6] px-4 py-3 text-[13.5px] font-semibold transition-all duration-200 hover:border-[#CBBEE4] hover:bg-[#523B7D]/40 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(107,80,158,0.38)] min-h-[44px] cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F4EFE6]/8 border border-[#F4EFE6]/25 text-[#F4EFE6] px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 hover:border-[#CBBEE4] hover:bg-[#523B7D]/40 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(107,80,158,0.38)] min-h-[44px] cursor-pointer whitespace-nowrap"
                 >
                   <Upload className="h-4 w-4 shrink-0 text-[#D6CFE0]" aria-hidden="true" />
                   <span>Восстановить (.json)</span>
@@ -194,7 +195,7 @@ export const LocalProfileFooter: React.FC<LocalProfileFooterProps> = ({
                 <button
                   type="button"
                   onClick={handleClearClick}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-[13.5px] font-semibold transition-all duration-200 hover:-translate-y-0.5 min-h-[44px] cursor-pointer ${
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 hover:-translate-y-0.5 min-h-[44px] cursor-pointer whitespace-nowrap ${
                     confirmReset
                       ? 'border-red-300 bg-red-600/85 text-white shadow-[0_0_22px_rgba(239,68,68,0.45)]'
                       : 'bg-[#F4EFE6]/5 border-[#F4EFE6]/20 text-[#D6CFE0] hover:border-red-300/65 hover:bg-red-500/20 hover:text-white hover:shadow-[0_0_18px_rgba(239,68,68,0.28)]'

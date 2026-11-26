@@ -372,13 +372,20 @@ export function App() {
   };
 
   const handleClearSampleData = () => {
-    setState((prev) => ({
-      ...prev,
-      habits: [],
-      resourceLevels: [null, null, null, null, null, null, null],
-      threeGoodThings: [],
-    }));
-    showToast('Трекер очищен — можно заполнять с чистого листа');
+    setState((prev) => {
+      const hadOnlySeedHabits = prev.habits.every((h) =>
+        h.id.startsWith('seed-')
+      );
+      return {
+        ...prev,
+        habits: prev.habits.filter((h) => !h.id.startsWith('seed-')),
+        resourceLevels: hadOnlySeedHabits
+          ? [null, null, null, null, null, null, null]
+          : prev.resourceLevels,
+        threeGoodThings: prev.threeGoodThings.filter((e) => !e.isSeed),
+      };
+    });
+    showToast('Учебные примеры убраны');
   };
 
   const handleResetAllData = () => {

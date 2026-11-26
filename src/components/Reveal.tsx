@@ -433,14 +433,23 @@ export const SectionBridge: React.FC<{
     const background =
       theme === 'dawn'
         ? 'linear-gradient(180deg, #261F38 0%, #443B57 26%, #82788C 54%, #C8BEB2 80%, #EFE8DC 100%)'
-        : 'linear-gradient(180deg, #F5F0E5 0%, #CFC5D4 26%, #7E728E 54%, #3E3354 80%, #1F192E 100%)';
+        : 'linear-gradient(180deg, #F5F0E5 0%, #F5F0E5 8%, #E7E0DE 24%, #C8BDCA 44%, #867A96 64%, #433759 84%, #1F192E 95%, #1F192E 100%)';
+
+    const bridgeStyle: React.CSSProperties =
+      theme === 'dusk'
+        ? {
+            background,
+            marginTop: '-1px',
+            boxShadow: '0 -1px 0 #F5F0E5',
+          }
+        : { background };
 
     return (
       <div
         ref={bridgeRef}
         aria-hidden={!label}
         className={`relative w-full h-24 sm:h-32 flex items-center justify-center overflow-hidden ${className}`}
-        style={{ background }}
+        style={bridgeStyle}
       >
         <div className="w-full max-w-[1220px] mx-auto px-5 sm:px-8 lg:px-12 flex flex-col items-center gap-2">
           <div className="w-full flex items-center gap-3">

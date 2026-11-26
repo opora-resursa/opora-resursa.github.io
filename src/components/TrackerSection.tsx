@@ -67,7 +67,7 @@ const QUICK_PRESETS: QuickPreset[] = [
 
 const ENERGY_FEELING_PRESETS: { value: number; label: string; shortLabel: string }[] = [
   { value: 2, label: 'Нет сил', shortLabel: 'Слабо' },
-  { value: 4, label: 'Устал', shortLabel: 'Мало' },
+  { value: 4, label: 'Мало сил', shortLabel: 'Мало' },
   { value: 6, label: 'Норма', shortLabel: 'Норма' },
   { value: 8, label: 'Ровно', shortLabel: 'Ровно' },
   { value: 10, label: 'Опора', shortLabel: 'Опора' },
@@ -87,7 +87,7 @@ function getEnergyStateMeta(level: number | null): {
   }
   if (level <= 3) {
     return {
-      label: 'истощение',
+      label: 'мало сил',
       pillClass: 'bg-[#F3E6EE] text-[#572B49] border-[#D9B8CE]',
       dotClass: 'bg-[#7A4469]',
     };
@@ -114,6 +114,16 @@ function formatEntriesCount(count: number): string {
     return `${count} записи`;
   }
   return `${count} записей`;
+}
+
+function pluralPauses(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'пауза';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return 'паузы';
+  }
+  return 'пауз';
 }
 
 export const TrackerSection: React.FC<TrackerSectionProps> = ({
@@ -225,6 +235,10 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
   }, [habits]);
 
   const energyInsight = useMemo(() => {
+    if (hasSampleData) {
+      return 'Показан учебный пример — отметьте свои дни, чтобы видеть личную динамику.';
+    }
+
     const daysWithEnergy = resourceLevels
       .map((level, idx) =>
         level !== null
@@ -233,7 +247,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
       )
       .filter((d): d is { level: number; habitsCount: number } => d !== null);
 
-    if (daysWithEnergy.length < 2) {
+    if (daysWithEnergy.length < 3) {
       return 'Отмечайте уровень сил несколько дней подряд — график покажет связь между короткими паузами и вашим самочувствием.';
     }
 
@@ -259,7 +273,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
     const overallAvg =
       daysWithEnergy.reduce((sum, d) => sum + d.level, 0) / daysWithEnergy.length;
     return `Средний уровень сил за ${daysWithEnergy.length} дн. — ${fmt(overallAvg)} из 10. Продолжайте отметки, чтобы видеть динамику недели.`;
-  }, [resourceLevels, dailyHabitCounts]);
+  }, [hasSampleData, resourceLevels, dailyHabitCounts]);
 
   const handleCreateHabit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -403,11 +417,11 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                       </span>
                       {habits.length > 0 && todayChecked === habits.length ? (
                         <span className="gazette-stamp slam whitespace-nowrap shrink-0 text-[#523B7D]">
-                          ДЕНЬ ЗАКРЫТ
+                          ПАУЗЫ ✓
                         </span>
                       ) : (
-                        <span className="font-gazette-mono text-[11px] font-semibold text-[#523B7D]">
-                          {weeklyStats.pct}%
+                        <span className="font-gazette-mono text-[11px] font-semibold text-[#523B7D] whitespace-nowrap shrink-0">
+                          {weeklyStats.checked} {pluralPauses(weeklyStats.checked)}
                         </span>
                       )}
                     </div>
@@ -531,10 +545,10 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                         <button
                           type="button"
                           onClick={onClearSampleData}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium text-[#615875] bg-[#EFE8DC]/75 hover:bg-[#ECE6F6] hover:text-[#38255C] border border-[#1C1629]/12 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[38px] text-[12px] font-medium text-[#615875] bg-[#EFE8DC]/75 hover:bg-[#ECE6F6] hover:text-[#38255C] border border-[#1C1629]/12 transition-colors cursor-pointer"
                         >
                           <RotateCcw className="h-3 w-3" aria-hidden="true" />
-                          <span>Начать с чистого листа</span>
+                          <span>Убрать примеры</span>
                         </button>
                       )}
                     </div>
@@ -549,10 +563,10 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                           <button
                             type="button"
                             onClick={onClearSampleData}
-                            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium text-[#615875] bg-[#EFE8DC]/75 hover:bg-[#ECE6F6] hover:text-[#38255C] border border-[#1C1629]/12 transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[38px] text-[12px] font-medium text-[#615875] bg-[#EFE8DC]/75 hover:bg-[#ECE6F6] hover:text-[#38255C] border border-[#1C1629]/12 transition-colors cursor-pointer"
                           >
                             <RotateCcw className="h-3 w-3" aria-hidden="true" />
-                            <span>Начать с чистого листа</span>
+                            <span>Убрать примеры</span>
                           </button>
                         )}
                       </div>
@@ -689,6 +703,11 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                                     </div>
 
                                     <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                      {habit.id.startsWith('seed-') && (
+                                        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-[#EFE8DC] text-[#615875] border border-[#1C1629]/12">
+                                          Пример
+                                        </span>
+                                      )}
                                       {linkedMethod && (
                                         <button
                                           type="button"
@@ -1038,6 +1057,11 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                             <span>1 · нет сил</span>
                             <span>10 · максимум опоры</span>
                           </div>
+                          {selectedDayLevel !== null && selectedDayLevel <= 3 && (
+                            <p className="text-[12.5px] leading-snug text-[#572B49] bg-[#F3E6EE]/70 border border-[#D9B8CE]/70 rounded-xl px-3 py-2">
+                              В такой день достаточно просто отдохнуть — не обязательно выполнять все практики.
+                            </p>
+                          )}
                         </div>
 
                         {/* 5 Quick Human Feeling Presets */}
@@ -1055,7 +1079,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                                   onClick={() =>
                                     onSetResourceLevel(selectedDay, preset.value)
                                   }
-                                  className={`min-w-0 rounded-xl px-0.5 sm:px-2 py-2 text-center transition-all duration-150 cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                                  className={`min-w-0 rounded-xl px-0.5 xl:px-1.5 py-2 text-center transition-all duration-150 cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
                                     active
                                       ? 'btn-violet shadow-[0_4px_14px_-2px_rgba(82,59,125,0.4)]'
                                       : 'bg-[#FCF9F3] text-[#1C1629] border border-[#1C1629]/12 hover:border-[#523B7D]/40 hover:bg-[#ECE6F6]/45'
@@ -1065,12 +1089,12 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                                     {preset.value}
                                   </span>
                                   <span
-                                    className={`text-[10.5px] sm:text-[11px] leading-tight truncate max-w-full ${
+                                    className={`text-[10.5px] xl:text-[11px] leading-tight whitespace-nowrap max-w-full ${
                                       active ? 'text-[#FAF6EE]/95' : 'text-[#615875]'
                                     }`}
                                   >
-                                    <span className="sm:hidden">{preset.shortLabel}</span>
-                                    <span className="hidden sm:inline">{preset.label}</span>
+                                    <span className="xl:hidden">{preset.shortLabel}</span>
+                                    <span className="hidden xl:inline">{preset.label}</span>
                                   </span>
                                 </button>
                               );
@@ -1156,44 +1180,44 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
 
                       <form onSubmit={handleSaveEvening} className="space-y-3">
                         <div className="relative">
-                          <span className="font-gazette-mono text-[12px] font-semibold text-[#7A4469] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <span className="font-gazette-mono text-[12px] font-semibold text-[#7A4469] absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 pointer-events-none">
                             1.
                           </span>
                           <input
                             type="text"
                             value={good1}
                             onChange={(e) => setGood1(e.target.value)}
-                            placeholder="Что было спокойным или тёплым?"
+                            placeholder="Спокойный момент дня"
                             aria-label="Первый хороший момент"
-                            className="w-full rounded-xl pl-10 pr-4 py-3 text-[14.5px] bg-[#F7F2E7] border border-[#1C1629]/15 text-[#1C1629] placeholder:text-[#857C99] focus:outline-none focus:ring-2 focus:ring-[#523B7D] focus:bg-[#FCF9F3] min-h-[46px] transition-colors"
+                            className="w-full rounded-xl pl-9 pr-3 sm:pl-10 sm:pr-4 py-3 text-[13.5px] sm:text-[14.5px] bg-[#F7F2E7] border border-[#1C1629]/15 text-[#1C1629] placeholder:text-[#857C99] focus:outline-none focus:ring-2 focus:ring-[#523B7D] focus:bg-[#FCF9F3] min-h-[46px] transition-colors"
                           />
                         </div>
 
                         <div className="relative">
-                          <span className="font-gazette-mono text-[12px] font-semibold text-[#7A4469] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <span className="font-gazette-mono text-[12px] font-semibold text-[#7A4469] absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 pointer-events-none">
                             2.
                           </span>
                           <input
                             type="text"
                             value={good2}
                             onChange={(e) => setGood2(e.target.value)}
-                            placeholder="Какая небольшая поддержка случилась?"
+                            placeholder="Что сегодня поддержало?"
                             aria-label="Второй хороший момент"
-                            className="w-full rounded-xl pl-10 pr-4 py-3 text-[14.5px] bg-[#F7F2E7] border border-[#1C1629]/15 text-[#1C1629] placeholder:text-[#857C99] focus:outline-none focus:ring-2 focus:ring-[#523B7D] focus:bg-[#FCF9F3] min-h-[46px] transition-colors"
+                            className="w-full rounded-xl pl-9 pr-3 sm:pl-10 sm:pr-4 py-3 text-[13.5px] sm:text-[14.5px] bg-[#F7F2E7] border border-[#1C1629]/15 text-[#1C1629] placeholder:text-[#857C99] focus:outline-none focus:ring-2 focus:ring-[#523B7D] focus:bg-[#FCF9F3] min-h-[46px] transition-colors"
                           />
                         </div>
 
                         <div className="relative">
-                          <span className="font-gazette-mono text-[12px] font-semibold text-[#7A4469] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <span className="font-gazette-mono text-[12px] font-semibold text-[#7A4469] absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 pointer-events-none">
                             3.
                           </span>
                           <input
                             type="text"
                             value={good3}
                             onChange={(e) => setGood3(e.target.value)}
-                            placeholder="Что удалось сделать бережно к себе?"
+                            placeholder="Что удалось бережно?"
                             aria-label="Третий хороший момент"
-                            className="w-full rounded-xl pl-10 pr-4 py-3 text-[14.5px] bg-[#F7F2E7] border border-[#1C1629]/15 text-[#1C1629] placeholder:text-[#857C99] focus:outline-none focus:ring-2 focus:ring-[#523B7D] focus:bg-[#FCF9F3] min-h-[46px] transition-colors"
+                            className="w-full rounded-xl pl-9 pr-3 sm:pl-10 sm:pr-4 py-3 text-[13.5px] sm:text-[14.5px] bg-[#F7F2E7] border border-[#1C1629]/15 text-[#1C1629] placeholder:text-[#857C99] focus:outline-none focus:ring-2 focus:ring-[#523B7D] focus:bg-[#FCF9F3] min-h-[46px] transition-colors"
                           />
                         </div>
 
@@ -1240,7 +1264,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                                   onClick={() => onDeleteThreeGood(entry.id)}
                                   aria-label="Удалить запись"
                                   title="Удалить запись"
-                                  className="inline-flex items-center justify-center rounded-lg h-7 w-7 text-[#857C99] hover:text-[#7A4469] hover:bg-[#F3E6EE] transition-colors cursor-pointer"
+                                  className="inline-flex items-center justify-center rounded-lg min-w-[38px] min-h-[38px] text-[#857C99] hover:text-[#7A4469] hover:bg-[#F3E6EE] transition-colors cursor-pointer"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                                 </button>

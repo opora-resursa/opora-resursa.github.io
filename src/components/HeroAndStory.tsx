@@ -28,7 +28,7 @@ const WHY_STEPS_PART1 = [
   {
     num: '03',
     title: 'Выходных перестаёт хватать',
-    text: 'Когда расход сил неделями выше восстановления, пассивный отдых не возвращает бодрость.',
+    text: 'Когда рабочая нагрузка неделями превышает восстановление, даже обычного сна и пары выходных перестаёт хватать.',
   },
 ];
 
@@ -56,19 +56,19 @@ const BODY_CHECK_POINTS: {
   {
     id: 'shoulders',
     idleLabel: 'Плечи',
-    doneLabel: '✓ Плечи опущены',
+    doneLabel: '✓ Плечи',
     hint: 'Опустите плечи на пару сантиметров вниз от ушей.',
   },
   {
     id: 'jaw',
     idleLabel: 'Челюсть',
-    doneLabel: '✓ Челюсть свободна',
+    doneLabel: '✓ Челюсть',
     hint: 'Разомкните зубы и дайте языку спокойно лечь вниз.',
   },
   {
     id: 'exhale',
     idleLabel: 'Выдох',
-    doneLabel: '✓ Длинный выдох',
+    doneLabel: '✓ Выдох',
     hint: 'Сделайте один медленный выдох чуть длиннее вдоха.',
   },
 ];
@@ -411,8 +411,9 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
 
               <Reveal variant="fade" delayMs={60}>
                 <p className="font-editorial-body text-[16.5px] leading-[1.6] text-[#D6CFE0]">
-                  Профессиональное истощение копится незаметно — через три
-                  повседневных механизма, которые не снимаются обычным сном.
+                  Профессиональное истощение копится постепенно — при высокой
+                  системной нагрузке и трёх повседневных механизмах, с которыми
+                  базовый сон в одиночку уже не успевает справляться.
                 </p>
               </Reveal>
 
@@ -459,7 +460,7 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                           type="button"
                           onClick={() => handleTogglePoint(pt.id)}
                           aria-pressed={isChecked}
-                          className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-[13.5px] font-medium border transition-all duration-200 cursor-pointer min-h-[38px] ${
+                          className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-[13.5px] font-medium whitespace-nowrap border transition-all duration-200 cursor-pointer min-h-[38px] ${
                             isChecked
                               ? 'bg-[#8BB0D4]/20 border-[#8BB0D4] text-[#F4EFE6] shadow-[0_0_16px_rgba(139,176,212,0.25)]'
                               : 'bg-[#F4EFE6]/[0.05] border-[#F4EFE6]/20 text-[#D6CFE0] hover:border-[#8BB0D4]/65 hover:text-[#F4EFE6] hover:bg-[#8BB0D4]/10'
@@ -483,7 +484,7 @@ export const HeroAndStory: React.FC<HeroAndStoryProps> = ({
                   {allBodyPointsChecked && (
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-[#F4EFE6]/10 animate-fade-in">
                       <span className="gazette-stamp slam text-[#8BB0D4]">
-                        Готово · тело уже чуть спокойнее
+                        Готово · короткая пауза сделана
                       </span>
                       <button
                         type="button"

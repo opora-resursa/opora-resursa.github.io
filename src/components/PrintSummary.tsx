@@ -331,10 +331,16 @@ export const PrintSheetContent: React.FC<{
             </p>
           </div>
 
-          {state.diagnostic ? (
+          {state.diagnostic && options.includeDiagnostic ? (
             <div className="shrink-0 inline-flex items-center gap-2 rounded-full bg-[#ECE6F6] border border-[#CBBEE4] px-3 py-1.5 text-[#38255C]">
               <span className="font-gazette-mono text-[10.5px] font-bold uppercase tracking-wider">
                 Общая нагрузка: {overallAverage}%
+              </span>
+            </div>
+          ) : !options.includeDiagnostic ? (
+            <div className="shrink-0 inline-flex items-center gap-2 rounded-full bg-[#E4EEF7] border border-[#B4CDE4] px-3 py-1.5 text-[#264A6D]">
+              <span className="font-gazette-mono text-[10.5px] font-bold uppercase tracking-wider">
+                Личный план саморегуляции
               </span>
             </div>
           ) : (
@@ -444,9 +450,10 @@ export const PrintSheetContent: React.FC<{
                       aria-hidden="true"
                     />
                     <p>
-                      Нагрузка сейчас высока: помимо коротких пауз важно обсудить
-                      пересмотр объёма задач с руководителем, обратиться за
-                      супервизией или очной поддержкой специалиста.
+                      Нагрузка сейчас высока: выберите 1 самую лёгкую паузу, по
+                      возможности обсудите объём задач с руководителем или
+                      обратитесь за очной поддержкой специалиста. Бесплатная
+                      линия поддержки: 8-800-333-44-34.
                     </p>
                   </div>
                 )}
@@ -771,9 +778,9 @@ const PRIVACY_TOGGLES: {
   key: keyof PrintOptions;
   label: string;
 }[] = [
-  { key: 'includeDiagnostic', label: 'Профиль и 4 практики' },
-  { key: 'includeTracker', label: 'Трекер «если — то» и силы' },
-  { key: 'includeSosCard', label: 'Карманная аптечка (2 мин)' },
+  { key: 'includeDiagnostic', label: 'Профиль и практики' },
+  { key: 'includeTracker', label: 'Трекер и силы' },
+  { key: 'includeSosCard', label: 'Аптечка (2 мин)' },
   { key: 'includeEvening', label: 'Вечерний итог' },
 ];
 
@@ -894,7 +901,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
       >
         {/* Header Bar */}
         <div
-          className="shrink-0 flex items-start justify-between gap-4 px-4 sm:px-6 py-4 text-white"
+          className="shrink-0 flex items-start justify-between gap-4 px-4 sm:px-6 py-2.5 sm:py-4 text-white"
           style={{ background: 'var(--grad-violet-deep)' }}
         >
           <div className="space-y-1 min-w-0">
@@ -908,7 +915,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
             >
               Предпросмотр PDF-памятки
             </h2>
-            <p className="text-[12.5px] leading-snug text-[#E4EEF7]/90 max-w-2xl">
+            <p className="hidden sm:block text-[12.5px] leading-snug text-[#E4EEF7]/90 max-w-2xl">
               Выберите разделы перед печатью или сохранением в PDF (например,
               скройте личные записи, если распечатываете памятку на работу).
             </p>
@@ -925,8 +932,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
         </div>
 
         {/* Privacy Toggle Bar */}
-        <div className="shrink-0 bg-[#FAF7F1] border-b border-[#1C1629]/12 px-4 sm:px-6 py-3 flex flex-wrap items-center gap-2">
-          <span className="type-kicker text-[#615875] mr-1">
+        <div className="shrink-0 bg-[#FAF7F1] border-b border-[#1C1629]/12 px-3.5 sm:px-6 py-2 sm:py-3 flex flex-nowrap overflow-x-auto sm:flex-wrap items-center gap-1.5 sm:gap-2">
+          <span className="hidden sm:inline type-kicker text-[#615875] mr-1">
             Разделы в PDF:
           </span>
           {PRIVACY_TOGGLES.map(({ key, label }) => {
@@ -939,7 +946,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                 type="button"
                 aria-pressed={active}
                 onClick={() => toggleOption(key)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition-all cursor-pointer min-h-[36px] border ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition-all cursor-pointer min-h-[36px] border whitespace-nowrap shrink-0 ${
                   active
                     ? 'bg-[#ECE6F6] border-[#523B7D]/40 text-[#38255C] shadow-2xs'
                     : 'bg-white border-[#1C1629]/15 text-[#615875] hover:border-[#1C1629]/30'
@@ -969,17 +976,17 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
         </div>
 
         {/* Sticky Bottom Action Bar */}
-        <div className="shrink-0 bg-[#FCF9F3] border-t border-[#1C1629]/12 px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <p className="text-[12px] text-[#615875] leading-snug">
+        <div className="shrink-0 bg-[#FCF9F3] border-t border-[#1C1629]/12 px-4 sm:px-6 py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p className="hidden sm:block text-[12px] text-[#615875] leading-snug">
             В окне печати выберите «Сохранить как PDF» и включите «Фоновая
             графика» для цветной версии.
           </p>
 
-          <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0">
+          <div className="flex flex-nowrap items-center justify-between sm:justify-end gap-2.5 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="btn-paper inline-flex items-center justify-center rounded-xl px-4 py-2.5 type-pill min-h-[44px] cursor-pointer"
+              className="btn-paper inline-flex items-center justify-center rounded-xl px-3.5 sm:px-4 py-2.5 type-pill min-h-[44px] cursor-pointer whitespace-nowrap"
             >
               Закрыть
             </button>
@@ -987,10 +994,11 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
               type="button"
               disabled={!hasAnySection}
               onClick={() => window.print()}
-              className="btn-violet inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 type-pill min-h-[44px] cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+              className="btn-violet inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 type-pill min-h-[44px] cursor-pointer whitespace-nowrap disabled:opacity-45 disabled:cursor-not-allowed"
             >
               <Printer className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>Сохранить в PDF / Печать</span>
+              <span className="sm:hidden">PDF / Печать</span>
+              <span className="hidden sm:inline">Сохранить в PDF / Печать</span>
             </button>
           </div>
         </div>

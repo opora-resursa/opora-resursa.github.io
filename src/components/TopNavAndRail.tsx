@@ -299,6 +299,14 @@ export const TopNavAndRail: React.FC<TopNavAndRailProps> = ({
 
   return (
     <>
+      {mobileMenuOpen && (
+        <div
+          aria-hidden="true"
+          onClick={() => setMobileMenuOpen(false)}
+          className="no-print fixed inset-0 top-16 z-30 bg-[#140F20]/45 backdrop-blur-[1px] md:hidden"
+        />
+      )}
+
       <header
         className={`no-print fixed top-0 inset-x-0 z-40 border-b backdrop-blur-md transition-colors duration-300 ${
           isDarkHeader
