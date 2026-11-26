@@ -363,7 +363,15 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
               {/* Dedicated Interactive Widget */}
               <div className="pt-1">
                 {modal.method.interactiveKind === 'breathing' && (
-                  <BreathingWidget key={modal.method.id} />
+                  <BreathingWidget
+                    key={modal.method.id}
+                    onGoToGrounding={() => {
+                      const groundingMethod = METHODS.find((m) => m.id === 19);
+                      if (groundingMethod) {
+                        onSelectMethod(groundingMethod, modal.fromSos);
+                      }
+                    }}
+                  />
                 )}
 
                 {modal.method.interactiveKind === 'timer' && (
@@ -419,14 +427,20 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
 /* ------------------------------------------------------------------ */
 /* 1. BREATHING WIDGET                                                */
 /* ------------------------------------------------------------------ */
-type PaceKey = '4-4' | '4-6' | '5-5';
-const PACES: Record<PaceKey, { label: string; inhale: number; exhale: number }> = {
-  '4-4': { label: '4–4 ровно', inhale: 4, exhale: 4 },
-  '4-6': { label: '4–6 удлинённый выдох', inhale: 4, exhale: 6 },
-  '5-5': { label: '5–5 медленно', inhale: 5, exhale: 5 },
+type PaceKey = 'gentle' | '4-4' | '4-6' | '5-5';
+const PACES: Record<
+  PaceKey,
+  { id: PaceKey; label: string; inhale: number; hold: number; exhale: number }
+> = {
+  gentle: { id: 'gentle', label: 'Мягкий 3–4', inhale: 3, hold: 0, exhale: 4 },
+  '4-4': { id: '4-4', label: '4–4 ровно', inhale: 4, hold: 0, exhale: 4 },
+  '4-6': { id: '4-6', label: '4–6 удлинённый выдох', inhale: 4, hold: 0, exhale: 6 },
+  '5-5': { id: '5-5', label: '5–5 медленно', inhale: 5, hold: 0, exhale: 5 },
 };
 
-const BreathingWidget: React.FC = () => {
+const BreathingWidget: React.FC<{ onGoToGrounding?: () => void }> = ({
+  onGoToGrounding,
+}) => {
   const [pace, setPace] = useState<PaceKey>('4-6');
   const [totalDuration, setTotalDuration] = useState<120 | 180>(120);
   const [remainingMs, setRemainingMs] = useState(120 * 1000);
@@ -489,15 +503,15 @@ const BreathingWidget: React.FC = () => {
     setCycleElapsedMs(0);
   };
 
-  const { inhale, exhale } = PACES[pace];
-  const cycleMs = (inhale + exhale) * 1000;
+  const { inhale, hold, exhale } = PACES[pace];
+  const cycleMs = (inhale + hold + exhale) * 1000;
   const posInCycle = cycleElapsedMs % cycleMs;
   const inhaleMs = inhale * 1000;
   const isInhale = posInCycle < inhaleMs;
 
   const phaseProgress = isInhale
     ? posInCycle / inhaleMs
-    : (posInCycle - inhaleMs) / (exhale * 1000);
+    : (posInCycle - inhaleMs - hold * 1000) / (exhale * 1000);
   const eased =
     0.5 - 0.5 * Math.cos(Math.PI * (isInhale ? phaseProgress : 1 - phaseProgress));
   const ringScale = running ? 0.62 + eased * 0.38 : 0.72;
@@ -573,9 +587,20 @@ const BreathingWidget: React.FC = () => {
         </div>
       </div>
 
-      <p className="text-[12.5px] leading-snug" style={{ color: 'var(--ink-3)' }}>
-        При нехватке воздуха переключитесь на более мягкий темп или на внешнее заземление (№19).
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[12.5px] leading-snug" style={{ color: 'var(--ink-3)' }}>
+          При нехватке воздуха переключитесь на более мягкий темп или на внешнее заземление (№19).
+        </p>
+        {onGoToGrounding && (
+          <button
+            type="button"
+            onClick={onGoToGrounding}
+            className="btn-paper inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12.5px] font-semibold min-h-[34px] cursor-pointer shrink-0"
+          >
+            <span>Перейти к заземлению (№19)</span>
+          </button>
+        )}
+      </div>
 
       {/* Animated SVG Breathing Ring */}
       <div className="flex flex-col items-center justify-center py-1 space-y-3">
@@ -916,6 +941,7 @@ const WorksheetWidget: React.FC<{
 }> = ({ method, savedValues, onChange, onClear, onSaveToEvening }) => {
   const fields = method.worksheetFields ?? [];
   const [confirmClear, setConfirmClear] = useState(false);
+  const [savedToEvening, setSavedToEvening] = useState(false);
   const confirmTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -929,16 +955,18 @@ const WorksheetWidget: React.FC<{
   const hasContent = fields.some((f) => Boolean(savedValues[f.id]?.trim()));
 
   const handleFieldChange = (fieldId: string, val: string) => {
+    setSavedToEvening(false);
     onChange({ ...savedValues, [fieldId]: val });
   };
 
   const handleSaveToEvening = () => {
-    if (!onSaveToEvening) return;
+    if (!onSaveToEvening || savedToEvening) return;
     const filled = fields
       .map((f) => savedValues[f.id]?.trim() ?? '')
       .filter(Boolean);
     if (filled.length === 0) return;
     onSaveToEvening(filled);
+    setSavedToEvening(true);
   };
 
   const handleDownloadTxt = () => {
@@ -976,6 +1004,7 @@ const WorksheetWidget: React.FC<{
       confirmTimerRef.current = null;
     }
     setConfirmClear(false);
+    setSavedToEvening(false);
     onClear();
   };
 
@@ -1020,6 +1049,10 @@ const WorksheetWidget: React.FC<{
         ))}
       </div>
 
+      <p className="text-[12.5px] leading-snug" style={{ color: 'var(--ink-3)' }}>
+        Ответы хранятся в этом браузере. На общем рабочем компьютере нажмите «Очистить поля» после завершения.
+      </p>
+
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         <div className="flex flex-wrap items-center gap-2.5">
           <button
@@ -1035,12 +1068,22 @@ const WorksheetWidget: React.FC<{
           {method.id === 28 && onSaveToEvening && (
             <button
               type="button"
-              disabled={!hasContent}
+              disabled={!hasContent || savedToEvening}
               onClick={handleSaveToEvening}
-              className="btn-violet inline-flex items-center gap-2 rounded-xl px-5 py-2.5 type-pill disabled:opacity-45 disabled:cursor-not-allowed min-h-[42px] cursor-pointer"
+              className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 type-pill min-h-[42px] ${
+                savedToEvening
+                  ? 'cursor-default bg-[#ECE6F6] text-[#38255C] border border-[#CBBEE4]'
+                  : 'btn-violet disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer'
+              }`}
             >
-              <HeartHandshake className="h-4 w-4" aria-hidden="true" />
-              <span>Сохранить в «Вечерний итог»</span>
+              {savedToEvening ? (
+                <span>✓ Сохранено в «Вечерний итог»</span>
+              ) : (
+                <>
+                  <HeartHandshake className="h-4 w-4" aria-hidden="true" />
+                  <span>Сохранить в «Вечерний итог»</span>
+                </>
+              )}
             </button>
           )}
         </div>
@@ -1265,6 +1308,9 @@ const JournalWidget: React.FC<{
         </div>
         <p className="text-[12.5px] leading-snug" style={{ color: 'var(--ink-3)' }}>
           Запись сохраняется в памяти этого браузера. На общем рабочем компьютере нажмите «Удалить без следа» после завершения.
+        </p>
+        <p className="text-[12.5px] leading-snug" style={{ color: 'var(--ink-3)' }}>
+          Когда завершите писать — сделайте один спокойный выдох и почувствуйте опору стоп о пол.
         </p>
       </div>
 

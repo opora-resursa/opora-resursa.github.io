@@ -76,7 +76,7 @@ const AXIS_DOT_GLOW: Record<ClusterId, string> = {
   body: '0 0 8px rgba(61, 106, 148, 0.48)',
   mind: '0 0 8px rgba(82, 59, 125, 0.48)',
   boundaries: '0 0 8px rgba(122, 68, 105, 0.48)',
-  resource: '0 0 8px rgba(61, 106, 148, 0.48)',
+  resource: '0 0 8px rgba(74, 123, 140, 0.48)',
 };
 
 const SCALE_OPTIONS = [
@@ -114,8 +114,8 @@ const AXIS_DISPLAY: Record<
   },
   resource: {
     title: 'Дефицит ресурса',
-    short: 'Ресурс',
-    colorVar: 'var(--sky)',
+    short: 'Деф. ресурса',
+    colorVar: '#4A7B8C',
     advice:
       'Фоновый запас эмоциональной энергии снижен, и обычные дела даются тяжелее. Важно бережно возвращать внимание к простым источникам радости и поддержки.',
   },
@@ -213,27 +213,39 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
     onComplete(computed);
   };
 
-  const handleSelectAnswer = (questionId: string, value: number) => {
+  const handleSelectAnswer = (
+    questionId: string,
+    value: number,
+    immediate = false
+  ) => {
     clearAdvanceTimer();
 
     const next = { ...answers, [questionId]: value };
     setAnswers(next);
 
     if (!isEditingAnswers && Object.keys(next).length === QUESTIONS.length) {
-      advanceTimerRef.current = window.setTimeout(() => {
+      if (immediate) {
         finalizeDiagnostic(next);
-      }, 220);
+      } else {
+        advanceTimerRef.current = window.setTimeout(() => {
+          finalizeDiagnostic(next);
+        }, 220);
+      }
       return;
     }
 
     if (isEditingAnswers) {
       if (activeStep < QUESTIONS.length - 1) {
-        shouldRestoreFocusRef.current = Boolean(
-          questionnaireRef.current?.contains(document.activeElement)
-        );
-        advanceTimerRef.current = window.setTimeout(() => {
+        shouldRestoreFocusRef.current =
+          immediate ||
+          Boolean(questionnaireRef.current?.contains(document.activeElement));
+        if (immediate) {
           setActiveStep((s) => Math.min(QUESTIONS.length - 1, s + 1));
-        }, 220);
+        } else {
+          advanceTimerRef.current = window.setTimeout(() => {
+            setActiveStep((s) => Math.min(QUESTIONS.length - 1, s + 1));
+          }, 220);
+        }
       }
       return;
     }
@@ -250,12 +262,16 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
         ? firstUnanswered
         : Math.min(QUESTIONS.length - 1, activeStep + 1);
 
-    shouldRestoreFocusRef.current = Boolean(
-      questionnaireRef.current?.contains(document.activeElement)
-    );
-    advanceTimerRef.current = window.setTimeout(() => {
+    shouldRestoreFocusRef.current =
+      immediate ||
+      Boolean(questionnaireRef.current?.contains(document.activeElement));
+    if (immediate) {
       setActiveStep(targetStep);
-    }, 220);
+    } else {
+      advanceTimerRef.current = window.setTimeout(() => {
+        setActiveStep(targetStep);
+      }, 220);
+    }
   };
 
   const handleStepClick = (idx: number) => {
@@ -285,7 +301,11 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
       setAnswers(result.answers ?? {});
     }
     setActiveStep(0);
+    shouldRestoreFocusRef.current = true;
     setIsEditingAnswers(true);
+    window.requestAnimationFrame(() => {
+      questionnaireRef.current?.focus({ preventScroll: true });
+    });
   };
 
   const handleCancelEditing = () => {
@@ -302,7 +322,11 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
     setActiveStep(0);
     setIsEditingAnswers(false);
     setPlanAdded(false);
+    shouldRestoreFocusRef.current = true;
     onReset();
+    window.requestAnimationFrame(() => {
+      questionnaireRef.current?.focus({ preventScroll: true });
+    });
   };
 
   const currentQuestion = QUESTIONS[activeStep] ?? QUESTIONS[0];
@@ -393,11 +417,15 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
     if (!showQuestionnaire || !shouldRestoreFocusRef.current) return;
     shouldRestoreFocusRef.current = false;
     const container = questionnaireRef.current;
+    if (!container) return;
+    const active = document.activeElement;
     if (
-      container &&
-      (!document.activeElement ||
-        document.activeElement === document.body ||
-        !container.contains(document.activeElement))
+      !active ||
+      active === document.body ||
+      !active.isConnected ||
+      !container.contains(active) ||
+      (active instanceof HTMLInputElement && active.type === 'radio') ||
+      (active instanceof HTMLButtonElement && active.disabled)
     ) {
       container.focus({ preventScroll: true });
     }
@@ -422,7 +450,7 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
 
     if (e.key >= '1' && e.key <= '5') {
       e.preventDefault();
-      handleSelectAnswer(currentQuestion.id, Number(e.key) - 1);
+      handleSelectAnswer(currentQuestion.id, Number(e.key) - 1, true);
       return;
     }
 
@@ -622,7 +650,7 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                           return (
                             <label
                               key={opt.value}
-                              className={`flex items-center justify-center text-center rounded-xl px-2 py-3 text-[12.5px] lg:text-[13.5px] font-medium cursor-pointer min-h-[48px] leading-tight select-none transition-all duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#523B7D] has-[:focus-visible]:ring-offset-2 ${
+                              className={`flex items-center justify-center text-center rounded-xl px-1.5 lg:px-2 xl:px-3 py-3 text-[12px] xl:text-[13.5px] sm:whitespace-nowrap font-medium cursor-pointer min-h-[48px] leading-tight select-none transition-all duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#523B7D] has-[:focus-visible]:ring-offset-2 ${
                                 isChecked
                                   ? 'btn-violet shadow-[0_6px_16px_-3px_rgba(82,59,125,0.45)]'
                                   : 'bg-[#FCF9F3]/60 text-[#312945] hover:bg-[#FCF9F3] hover:text-[#523B7D] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(28,22,41,0.08)]'
@@ -733,8 +761,11 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                           </span>
                         </div>
 
-                        <div className="radar-pop relative z-10 w-full flex justify-center">
+                        <div className="radar-pop relative z-10 w-full flex flex-col items-center gap-1.5">
                           <FourAxisRadarChart scores={result.scores} />
+                          <p className="type-micro text-center text-[#615875]">
+                            Чем выше %, тем выше нагрузка в зоне
+                          </p>
                         </div>
                       </div>
 
@@ -744,7 +775,10 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                           (axis) => {
                             const val = result.scores[axis];
                             const meta = AXIS_DISPLAY[axis];
-                            const isTop = result.topAxes.includes(axis) && val >= 25;
+                            const isTop =
+                              !isUniformLoad &&
+                              result.topAxes.includes(axis) &&
+                              val >= 25;
                             return (
                               <div key={axis} className="space-y-1.5">
                                 <div className="flex items-center justify-between text-[14.5px]">
@@ -791,7 +825,7 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                             'Нагрузка распределена равномерно по всем 4 зонам'
                           ) : (
                             <>
-                              {overallAverage < 25
+                              {overallAverage < 25 && !isHighLoad
                                 ? 'Профилактический фокус — '
                                 : 'Приоритет внимания сейчас — '}
                               <span className="text-[#523B7D]">
@@ -816,7 +850,7 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                           {result.topAxes[1] && result.scores[result.topAxes[1]] >= 25 && (
                             <p>{AXIS_DISPLAY[result.topAxes[1]].advice}</p>
                           )}
-                          {overallAverage < 25 && (
+                          {overallAverage < 25 && !isHighLoad && (
                             <p className="rounded-xl p-3.5 text-[14.5px] bg-[#ECE6F6]/70 border-l-[3px] border-l-[#523B7D] text-[#38255C]">
                               Ваш текущий профиль выглядит достаточно устойчивым. Сейчас
                               хорошо подходят короткие профилактические паузы для поддержания
@@ -844,7 +878,7 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                                   {overallAverage >= 65
                                     ? 'Уровень нагрузки сейчас заметно высок.'
                                     : 'В одной из зон нагрузка сейчас заметно высока.'}{' '}
-                                  При таком истощении важно не оставаться с ним наедине:
+                                  При такой высокой нагрузке важно не оставаться с ней наедине:
                                   помимо коротких пауз стоит по возможности обсудить пересмотр
                                   нагрузки с руководителем, обратиться за супервизией,
                                   поддержкой коллеги или очной консультацией специалиста.
@@ -853,15 +887,29 @@ export const DiagnosticSection: React.FC<DiagnosticSectionProps> = ({
                                   Не пытайтесь выполнить весь план сразу — выберите одну самую
                                   простую 2-минутную паузу. Если подавленность или нарушения
                                   сна держатся дольше двух недель, обратитесь к врачу или
-                                  психотерапевту. Бесплатная круглосуточная поддержка:{' '}
-                                  <span className="font-semibold whitespace-nowrap">
+                                  психотерапевту. Круглосуточная психологическая помощь:{' '}
+                                  <a
+                                    href="tel:88003334434"
+                                    className="underline underline-offset-2 font-semibold whitespace-nowrap"
+                                  >
                                     8-800-333-44-34
-                                  </span>{' '}
-                                  (анонимно) ·{' '}
-                                  <span className="font-semibold whitespace-nowrap">
+                                  </a>{' '}
+                                  (круглосуточно, анонимно, по РФ бесплатно);{' '}
+                                  <a
+                                    href="tel:+74959895050"
+                                    className="underline underline-offset-2 font-semibold whitespace-nowrap"
+                                  >
                                     +7 (495) 989-50-50
-                                  </span>{' '}
-                                  (линия МЧС).
+                                  </a>{' '}
+                                  (линия МЧС России: консультация бесплатна, звонок по тарифу
+                                  оператора);{' '}
+                                  <a
+                                    href="tel:112"
+                                    className="underline underline-offset-2 font-semibold whitespace-nowrap"
+                                  >
+                                    112
+                                  </a>{' '}
+                                  (при экстренной ситуации).
                                 </p>
                               </div>
                             </div>
@@ -1019,10 +1067,10 @@ const FourAxisRadarChart: React.FC<{ scores: Record<ClusterId, number> }> = ({
 
   return (
     <svg
-      viewBox="0 0 320 260"
-      className="w-full max-w-[320px] h-auto"
+      viewBox="-24 0 368 260"
+      className="w-full max-w-[340px] h-auto"
       role="img"
-      aria-label={`Диаграмма нагрузки: Тело ${scores.body}%, Мысли ${scores.mind}%, Границы ${scores.boundaries}%, Ресурс ${scores.resource}%`}
+      aria-label={`Диаграмма нагрузки: Тело ${scores.body}%, Мысли ${scores.mind}%, Границы ${scores.boundaries}%, Дефицит ресурса ${scores.resource}%`}
     >
       <defs>
         <filter id="radar-stroke-glow" x="-30%" y="-30%" width="160%" height="160%">
@@ -1154,7 +1202,7 @@ const FourAxisRadarChart: React.FC<{ scores: Record<ClusterId, number> }> = ({
         {scores.boundaries}%
       </text>
 
-      {/* Left: Ресурс */}
+      {/* Left: Деф. ресурса */}
       <text
         x={cx - maxR - 12}
         y={cy - 2}
@@ -1162,7 +1210,7 @@ const FourAxisRadarChart: React.FC<{ scores: Record<ClusterId, number> }> = ({
         fill="#1C1629"
         className="text-[12.5px] font-semibold"
       >
-        Ресурс
+        {AXIS_DISPLAY.resource.short}
       </text>
       <text
         x={cx - maxR - 12}

@@ -28,7 +28,11 @@ export function getLocalIsoDate(date: Date = new Date()): string {
 export function formatEntryDateLabel(entry: {
   dateLabel: string;
   isoDate?: string;
+  isSeed?: boolean;
 }): string {
+  if (entry.isSeed) {
+    return 'Пример записи';
+  }
   if (entry.isoDate) {
     const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(entry.isoDate);
     let parsed: Date | null = null;
@@ -304,6 +308,7 @@ export function createDefaultState(): AppState {
     diagnostic: null,
     habits: defaultHabits,
     resourceLevels: sampleResources,
+    hasSampleResources: true,
     todayIndex: todayIdx,
     threeGoodThings: defaultReflections,
     worksheets: {},
@@ -316,6 +321,7 @@ export function createEmptyState(): AppState {
     diagnostic: null,
     habits: [],
     resourceLevels: [null, null, null, null, null, null, null],
+    hasSampleResources: false,
     todayIndex: getCurrentWeekdayIndex(),
     threeGoodThings: [],
     worksheets: {},
@@ -341,6 +347,7 @@ export function loadAppState(): AppState {
               typeof v === 'number' && Number.isFinite(v) && v >= 1 && v <= 10 ? v : null
             )
           : fallback.resourceLevels,
+      hasSampleResources: parsed.hasSampleResources === true,
       todayIndex: currentTodayIndex,
       threeGoodThings: Array.isArray(parsed.threeGoodThings)
         ? sanitizeThreeGoodThings(parsed.threeGoodThings)
@@ -450,6 +457,7 @@ export function validateImportedBackup(data: unknown): AppState | null {
             typeof v === 'number' && Number.isFinite(v) && v >= 1 && v <= 10 ? v : null
           )
         : base.resourceLevels,
+    hasSampleResources: false,
     todayIndex: getCurrentWeekdayIndex(),
     threeGoodThings: Array.isArray(candidate.threeGoodThings)
       ? sanitizeThreeGoodThings(candidate.threeGoodThings)
@@ -476,20 +484,28 @@ export function pickRecommendedMethods(scores: Record<ClusterId, number>): {
   };
 
   const chosen: number[] = [];
-  for (const axis of topAxes) {
-    for (const id of clusterPriority[axis]) {
-      if (chosen.length < 4 && !chosen.includes(id) && METHODS.some((m) => m.id === id)) {
-        chosen.push(id);
-      }
-      if (chosen.filter((cid) => METHODS.find((m) => m.id === cid)?.cluster === axis).length >= 2) {
-        break;
+  for (let round = 0; round < 2; round += 1) {
+    for (const axis of topAxes) {
+      for (const id of clusterPriority[axis]) {
+        if (
+          chosen.length < 4 &&
+          !chosen.includes(id) &&
+          METHODS.some((m) => m.id === id)
+        ) {
+          chosen.push(id);
+          break;
+        }
       }
     }
   }
 
   for (const axis of ranked) {
     for (const id of clusterPriority[axis]) {
-      if (chosen.length < 4 && !chosen.includes(id)) {
+      if (
+        chosen.length < 4 &&
+        !chosen.includes(id) &&
+        METHODS.some((m) => m.id === id)
+      ) {
         chosen.push(id);
       }
     }

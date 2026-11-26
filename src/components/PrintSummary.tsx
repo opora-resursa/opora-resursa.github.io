@@ -31,7 +31,7 @@ const AXIS_SHORT: Record<ClusterId, string> = {
   body: 'Тело',
   mind: 'Мысли',
   boundaries: 'Границы',
-  resource: 'Ресурс',
+  resource: 'Деф. ресурса',
 };
 
 const AXIS_BAR_COLORS: Record<ClusterId, string> = {
@@ -53,7 +53,7 @@ const AXIS_ADVICE: Record<ClusterId, string> = {
 const SOS_CARDS = [
   {
     title: '1. Дыхание 4–6 (№03 · 2 мин)',
-    text: 'Спокойный вдох на 4 счёта и плавный выдох на 6 счётов без задержек и напряжения.',
+    text: 'Спокойный вдох на 4 счёта и плавный выдох на 6 счётов без задержек и напряжения в удобном темпе; при дискомфорте перейдите к п. 3.',
   },
   {
     title: '2. Самообъятие (№13 · 2 мин)',
@@ -76,9 +76,9 @@ function getFirstSentence(text: string): string {
 const PrintRadarChart: React.FC<{ scores: Record<ClusterId, number> }> = ({
   scores,
 }) => {
-  const cx = 140;
+  const cx = 158;
   const cy = 115;
-  const maxR = 64;
+  const maxR = 62;
 
   const toPoint = (axisIndex: number, pct: number) => {
     const r = (Math.max(8, pct) / 100) * maxR;
@@ -101,10 +101,10 @@ const PrintRadarChart: React.FC<{ scores: Record<ClusterId, number> }> = ({
 
   return (
     <svg
-      viewBox="0 0 280 230"
-      className="w-full max-w-[260px] h-auto mx-auto"
+      viewBox="0 0 300 230"
+      className="w-full max-w-[270px] h-auto mx-auto"
       role="img"
-      aria-label={`Диаграмма нагрузки: Тело ${scores.body}%, Мысли ${scores.mind}%, Границы ${scores.boundaries}%, Ресурс ${scores.resource}%`}
+      aria-label={`Диаграмма нагрузки: Тело ${scores.body}%, Мысли ${scores.mind}%, Границы ${scores.boundaries}%, Деф. ресурса ${scores.resource}%`}
     >
       {ringLevels.map((lvl) => {
         const pts = [0, 1, 2, 3]
@@ -277,9 +277,27 @@ export const PrintSheetContent: React.FC<{
       )
     : 0;
 
+  const realHabits = state.habits.filter((h) => !h.id.startsWith('seed-'));
+  const realEvening = state.threeGoodThings.filter((e) => !e.isSeed);
+  const realResources = state.hasSampleResources
+    ? [null, null, null, null, null, null, null]
+    : state.resourceLevels;
+
   const isHighLoad = state.diagnostic
     ? overallAverage >= 65 ||
       Object.values(state.diagnostic.scores).some((val) => val >= 75)
+    : false;
+
+  const isUniformLoad = state.diagnostic
+    ? (() => {
+        const { body, mind, boundaries, resource } = state.diagnostic.scores;
+        return (
+          body === mind &&
+          mind === boundaries &&
+          boundaries === resource &&
+          overallAverage >= 25
+        );
+      })()
     : false;
 
   const activeAdviceAxes = state.diagnostic
@@ -288,7 +306,7 @@ export const PrintSheetContent: React.FC<{
       )
     : [];
 
-  const markedResources = state.resourceLevels.filter(
+  const markedResources = realResources.filter(
     (v): v is number => v !== null
   );
   const avgResource =
@@ -380,16 +398,28 @@ export const PrintSheetContent: React.FC<{
               <div className="sm:col-span-5 print:col-span-5 space-y-2.5">
                 <div className="rounded-xl bg-[#FAF7F1] border border-[#1C1629]/15 p-2.5">
                   <PrintRadarChart scores={state.diagnostic.scores} />
+                  <p className="mt-1 text-center font-gazette-mono text-[9.5px] text-[#615875]">
+                    Чем выше %, тем выше нагрузка
+                  </p>
                 </div>
 
                 <div className="space-y-1.5 px-0.5">
                   {AXIS_ORDER.map((axis) => {
                     const val = state.diagnostic!.scores[axis];
+                    const isTop =
+                      !isUniformLoad &&
+                      state.diagnostic!.topAxes.includes(axis) &&
+                      val >= 25;
                     return (
                       <div key={axis} className="space-y-0.5">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-medium text-[#1C1629]">
-                            {AXIS_NAMES[axis]}
+                        <div className="flex items-center justify-between text-[11px] gap-1.5">
+                          <span className="font-medium text-[#1C1629] inline-flex items-center gap-1.5">
+                            <span>{AXIS_NAMES[axis]}</span>
+                            {isTop && (
+                              <span className="rounded bg-[#ECE6F6] border border-[#CBBEE4] px-1 py-0.2 text-[8.5px] font-gazette-mono uppercase tracking-wider text-[#523B7D]">
+                                приоритет
+                              </span>
+                            )}
                           </span>
                           <span className="font-gazette-mono font-bold text-[#362E47]">
                             {val}%
@@ -414,27 +444,36 @@ export const PrintSheetContent: React.FC<{
               <div className="sm:col-span-7 print:col-span-7 space-y-2.5">
                 <div className="space-y-1">
                   <h3 className="font-editorial text-[14px] text-[#1C1629]">
-                    {overallAverage < 25
-                      ? 'Профилактический фокус'
-                      : 'Приоритет внимания'}
-                    {activeAdviceAxes.length > 0 && (
-                      <span className="text-[#523B7D]">
-                        {' '}
-                        —{' '}
-                        {activeAdviceAxes
-                          .map((ax) => AXIS_NAMES[ax].toLowerCase())
-                          .join(' и ')}
-                      </span>
+                    {overallAverage === 0 ? (
+                      'Нагрузка минимальна — профилактический фокус'
+                    ) : isUniformLoad ? (
+                      'Нагрузка распределена равномерно по всем 4 зонам'
+                    ) : (
+                      <>
+                        {overallAverage < 25 && !isHighLoad
+                          ? 'Профилактический фокус'
+                          : 'Приоритет внимания'}
+                        {activeAdviceAxes.length > 0 && (
+                          <span className="text-[#523B7D]">
+                            {' '}
+                            —{' '}
+                            {activeAdviceAxes
+                              .map((ax) => AXIS_NAMES[ax].toLowerCase())
+                              .join(' и ')}
+                          </span>
+                        )}
+                      </>
                     )}
                   </h3>
 
-                  {activeAdviceAxes.length > 0 ? (
+                  {activeAdviceAxes.length > 0 && (
                     <div className="space-y-1 text-[11.5px] leading-[1.42] text-[#362E47]">
                       {activeAdviceAxes.map((axis) => (
                         <p key={axis}>{AXIS_ADVICE[axis]}</p>
                       ))}
                     </div>
-                  ) : (
+                  )}
+                  {overallAverage < 25 && !isHighLoad && (
                     <p className="rounded-lg bg-[#ECE6F6]/70 border-l-[3px] border-l-[#523B7D] px-2.5 py-1.5 text-[11.5px] text-[#38255C]">
                       Текущий профиль выглядит устойчивым — сейчас хорошо
                       подходят короткие профилактические паузы для поддержания
@@ -450,10 +489,11 @@ export const PrintSheetContent: React.FC<{
                       aria-hidden="true"
                     />
                     <p>
-                      Нагрузка сейчас высока: выберите 1 самую лёгкую паузу, по
-                      возможности обсудите объём задач с руководителем или
-                      обратитесь за очной поддержкой специалиста. Бесплатная
-                      линия поддержки: 8-800-333-44-34.
+                      При такой высокой нагрузке выберите 1 самую лёгкую паузу,
+                      по возможности обсудите объём задач с руководителем или
+                      обратитесь за очной поддержкой специалиста. Линия
+                      поддержки: 8-800-333-44-34 (круглосуточно, анонимно, по РФ
+                      бесплатно).
                     </p>
                   </div>
                 )}
@@ -535,8 +575,8 @@ export const PrintSheetContent: React.FC<{
                 </tr>
               </thead>
               <tbody>
-                {state.habits.length > 0 ? (
-                  state.habits.map((h) => (
+                {realHabits.length > 0 ? (
+                  realHabits.map((h) => (
                     <tr
                       key={h.id}
                       className="border-b border-[#1C1629]/10 last:border-b-0"
@@ -620,7 +660,7 @@ export const PrintSheetContent: React.FC<{
 
             <div className="grid grid-cols-7 gap-2 text-center">
               {DAY_LABELS.map((day, idx) => {
-                const lvl = state.resourceLevels[idx];
+                const lvl = realResources[idx];
                 const barHeightPct =
                   lvl !== null ? Math.max(12, Math.min(100, lvl * 10)) : 0;
                 return (
@@ -691,20 +731,20 @@ export const PrintSheetContent: React.FC<{
             <h2 className="font-editorial text-[15px] text-[#1F192E]">
               4. Вечерний итог (Метод №28)
             </h2>
-            {state.threeGoodThings.length > 4 ? (
+            {realEvening.length > 4 ? (
               <span className="font-gazette-mono text-[9.5px] text-[#615875]">
-                Показаны 4 из {state.threeGoodThings.length} записей
+                Показаны 4 из {realEvening.length} записей
               </span>
-            ) : state.threeGoodThings.length === 0 ? (
+            ) : realEvening.length === 0 ? (
               <span className="font-gazette-mono text-[9.5px] uppercase tracking-wider text-[#615875]">
                 Бланк для записи ручкой
               </span>
             ) : null}
           </div>
 
-          {state.threeGoodThings.length > 0 ? (
+          {realEvening.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-2.5">
-              {state.threeGoodThings.slice(0, 4).map((entry) => (
+              {realEvening.slice(0, 4).map((entry) => (
                 <div
                   key={entry.id}
                   className="print-card rounded-lg bg-[#FAF7F1] border border-[#1C1629]/12 p-2.5 space-y-1"
@@ -865,6 +905,10 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
   if (!isOpen) return null;
 
+  const realEveningCount = state.threeGoodThings.filter(
+    (e) => !e.isSeed
+  ).length;
+
   const hasAnySection =
     options.includeDiagnostic ||
     options.includeTracker ||
@@ -939,7 +983,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           {PRIVACY_TOGGLES.map(({ key, label }) => {
             const active = options[key];
             const emptyEveningHint =
-              key === 'includeEvening' && state.threeGoodThings.length === 0;
+              key === 'includeEvening' && realEveningCount === 0;
             return (
               <button
                 key={key}

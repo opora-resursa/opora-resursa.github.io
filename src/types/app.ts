@@ -35,6 +35,7 @@ export interface AppState {
   habits: HabitRule[];
   /** 7 values for Mon..Sun (1..10 or null) */
   resourceLevels: (number | null)[];
+  hasSampleResources?: boolean;
   /** Index 0..6 representing today in the Mon..Sun matrix */
   todayIndex: number;
   threeGoodThings: ThreeGoodEntry[];

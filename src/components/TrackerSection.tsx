@@ -24,6 +24,7 @@ type TrackerTab = 'habits' | 'energy' | 'evening';
 interface TrackerSectionProps {
   habits: HabitRule[];
   resourceLevels: (number | null)[];
+  hasSampleResources?: boolean;
   todayIndex: number;
   threeGoodThings: ThreeGoodEntry[];
   onAddHabit: (trigger: string, action: string, methodId?: number) => void;
@@ -129,6 +130,7 @@ function pluralPauses(count: number): string {
 export const TrackerSection: React.FC<TrackerSectionProps> = ({
   habits,
   resourceLevels,
+  hasSampleResources = false,
   todayIndex,
   threeGoodThings,
   onAddHabit,
@@ -196,9 +198,10 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
     }
   }, [threeGoodThings.length]);
 
+  const hasSeedHabits = habits.some((h) => h.id.startsWith('seed-'));
+  const hasSeedEvening = threeGoodThings.some((e) => e.isSeed);
   const hasSampleData =
-    habits.some((h) => h.id.startsWith('seed-')) ||
-    threeGoodThings.some((e) => e.isSeed);
+    hasSeedHabits || hasSeedEvening || Boolean(hasSampleResources);
 
   const todayChecked = useMemo(() => {
     return habits.filter((h) => Boolean(h.checks[todayIndex])).length;
@@ -235,7 +238,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
   }, [habits]);
 
   const energyInsight = useMemo(() => {
-    if (hasSampleData) {
+    if (hasSampleResources) {
       return 'Показан учебный пример — отметьте свои дни, чтобы видеть личную динамику.';
     }
 
@@ -273,7 +276,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
     const overallAvg =
       daysWithEnergy.reduce((sum, d) => sum + d.level, 0) / daysWithEnergy.length;
     return `Средний уровень сил за ${daysWithEnergy.length} дн. — ${fmt(overallAvg)} из 10. Продолжайте отметки, чтобы видеть динамику недели.`;
-  }, [hasSampleData, resourceLevels, dailyHabitCounts]);
+  }, [hasSampleResources, resourceLevels, dailyHabitCounts]);
 
   const handleCreateHabit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -323,6 +326,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
     <section
       ref={sectionRef}
       id="tracker"
+      data-has-sample={hasSampleData ? 'true' : undefined}
       className="no-print relative overflow-x-clip scroll-mt-24 bg-[#F5F0E5]"
     >
       <div
@@ -541,7 +545,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                       <span className="type-kicker text-[#615875]">
                         Ваши правила «если — то»
                       </span>
-                      {hasSampleData && onClearSampleData && (
+                      {hasSeedHabits && onClearSampleData && (
                         <button
                           type="button"
                           onClick={onClearSampleData}
@@ -559,7 +563,7 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                         <span className="type-kicker text-[#615875]">
                           Ваши правила «если — то»
                         </span>
-                        {hasSampleData && onClearSampleData && (
+                        {hasSeedHabits && onClearSampleData && (
                           <button
                             type="button"
                             onClick={onClearSampleData}
@@ -961,9 +965,21 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                     {/* Left (5/12): Segmented Day Switcher + Presets + Slider */}
                     <div className="lg:col-span-5 space-y-5">
                       <div className="space-y-1">
-                        <span className="type-kicker text-[#3D6A94]">
-                          Самочувствие по дням
-                        </span>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="type-kicker text-[#3D6A94]">
+                            Самочувствие по дням
+                          </span>
+                          {Boolean(hasSampleResources) && onClearSampleData && (
+                            <button
+                              type="button"
+                              onClick={onClearSampleData}
+                              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[38px] text-[12px] font-medium text-[#615875] bg-[#EFE8DC]/75 hover:bg-[#ECE6F6] hover:text-[#38255C] border border-[#1C1629]/12 transition-colors cursor-pointer"
+                            >
+                              <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                              <span>Убрать примеры</span>
+                            </button>
+                          )}
+                        </div>
                         <h3 className="font-editorial text-xl sm:text-2xl text-[#1C1629]">
                           Как вы оцениваете запас сил ({DAY_LABELS[selectedDay]})?
                         </h3>
@@ -1234,13 +1250,25 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
 
                     {/* Right (6/12): Clean Timeline of Saved Entries */}
                     <div className="lg:col-span-6 space-y-3">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="type-kicker text-[#615875]">
                           Лента сохранённых моментов
                         </span>
-                        <span className="font-gazette-mono text-[11.5px] text-[#615875]">
-                          {formatEntriesCount(threeGoodThings.length)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {hasSeedEvening && onClearSampleData && (
+                            <button
+                              type="button"
+                              onClick={onClearSampleData}
+                              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[38px] text-[12px] font-medium text-[#615875] bg-[#EFE8DC]/75 hover:bg-[#ECE6F6] hover:text-[#38255C] border border-[#1C1629]/12 transition-colors cursor-pointer"
+                            >
+                              <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                              <span>Убрать примеры</span>
+                            </button>
+                          )}
+                          <span className="font-gazette-mono text-[11.5px] text-[#615875]">
+                            {formatEntriesCount(threeGoodThings.length)}
+                          </span>
+                        </div>
                       </div>
 
                       {threeGoodThings.length === 0 ? (
@@ -1256,9 +1284,16 @@ export const TrackerSection: React.FC<TrackerSectionProps> = ({
                               className="rounded-2xl p-4 space-y-2 bg-[#F7F2E7]/85 border border-[#1C1629]/10"
                             >
                               <div className="flex items-center justify-between gap-2">
-                                <p className="type-kicker text-[#523B7D]">
-                                  {formatEntryDateLabel(entry)}
-                                </p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="type-kicker text-[#523B7D]">
+                                    {formatEntryDateLabel(entry)}
+                                  </p>
+                                  {entry.isSeed && (
+                                    <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-[#EFE8DC] text-[#615875] border border-[#1C1629]/12">
+                                      Пример
+                                    </span>
+                                  )}
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => onDeleteThreeGood(entry.id)}

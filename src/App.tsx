@@ -22,6 +22,31 @@ import {
 } from './components/PrintSummary';
 import { Toast, ToastData } from './components/Toast';
 
+function replaceSeedHabitOrAppend(
+  habits: AppState['habits'],
+  newRule: AppState['habits'][number]
+): AppState['habits'] {
+  if (typeof newRule.methodId !== 'number') {
+    return [...habits, newRule];
+  }
+  let replaced = false;
+  const next = habits.reduce<AppState['habits']>((acc, h) => {
+    if (h.id.startsWith('seed-') && h.methodId === newRule.methodId) {
+      if (!replaced) {
+        acc.push(newRule);
+        replaced = true;
+      }
+      return acc;
+    }
+    acc.push(h);
+    return acc;
+  }, []);
+  if (!replaced) {
+    next.push(newRule);
+  }
+  return next;
+}
+
 export function App() {
   const [state, setState] = useState<AppState>(() => loadAppState());
   const [modal, setModal] = useState<ModalState>({ type: 'closed' });
@@ -98,7 +123,10 @@ export function App() {
 
   const handleAddMethodToTracker = useCallback(
     (method: RegulationMethod) => {
-      if (habitsRef.current.some((h) => h.methodId === method.id)) {
+      const isRealHabitForMethod = (h: AppState['habits'][number]) =>
+        !h.id.startsWith('seed-') && h.methodId === method.id;
+
+      if (habitsRef.current.some(isRealHabitForMethod)) {
         showToast('Эта практика уже есть в вашем трекере');
         return;
       }
@@ -110,21 +138,18 @@ export function App() {
         `Практика «${method.shortTitle}» (№${method.id})`;
 
       setState((prev) => {
-        if (prev.habits.some((h) => h.methodId === method.id)) {
+        if (prev.habits.some(isRealHabitForMethod)) {
           return prev;
         }
         return {
           ...prev,
-          habits: [
-            ...prev.habits,
-            {
-              id: `habit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-              trigger,
-              action,
-              methodId: method.id,
-              checks: [false, false, false, false, false, false, false],
-            },
-          ],
+          habits: replaceSeedHabitOrAppend(prev.habits, {
+            id: `habit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            trigger,
+            action,
+            methodId: method.id,
+            checks: [false, false, false, false, false, false, false],
+          }),
         };
       });
       showToast('Правило добавлено в трекер привычек');
@@ -139,9 +164,10 @@ export function App() {
       const hasDuplicate = (habits: AppState['habits']) =>
         habits.some(
           (h) =>
-            (methodId !== 8 && h.methodId === methodId) ||
-            (h.trigger.trim().toLowerCase() === normTrigger &&
-              h.action.trim().toLowerCase() === normAction)
+            !h.id.startsWith('seed-') &&
+            ((methodId !== 8 && h.methodId === methodId) ||
+              (h.trigger.trim().toLowerCase() === normTrigger &&
+                h.action.trim().toLowerCase() === normAction))
         );
 
       if (hasDuplicate(habitsRef.current)) {
@@ -156,16 +182,13 @@ export function App() {
         }
         return {
           ...prev,
-          habits: [
-            ...prev.habits,
-            {
-              id: `habit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-              trigger,
-              action,
-              methodId,
-              checks: [false, false, false, false, false, false, false],
-            },
-          ],
+          habits: replaceSeedHabitOrAppend(prev.habits, {
+            id: `habit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            trigger,
+            action,
+            methodId,
+            checks: [false, false, false, false, false, false, false],
+          }),
         };
       });
       setModal({ type: 'closed' });
@@ -181,6 +204,7 @@ export function App() {
       );
       const existingIds = new Set(
         habitsRef.current
+          .filter((h) => !h.id.startsWith('seed-'))
           .map((h) => h.methodId)
           .filter((id): id is number => typeof id === 'number')
       );
@@ -207,14 +231,19 @@ export function App() {
       setState((prev) => {
         const prevIds = new Set(
           prev.habits
+            .filter((h) => !h.id.startsWith('seed-'))
             .map((h) => h.methodId)
             .filter((id): id is number => typeof id === 'number')
         );
         const filtered = newRules.filter((r) => !prevIds.has(r.methodId));
         if (filtered.length === 0) return prev;
+        let nextHabits = prev.habits;
+        for (const rule of filtered) {
+          nextHabits = replaceSeedHabitOrAppend(nextHabits, rule);
+        }
         return {
           ...prev,
-          habits: [...prev.habits, ...filtered],
+          habits: nextHabits,
         };
       });
 
@@ -275,6 +304,7 @@ export function App() {
       resourceLevels: prev.resourceLevels.map((v, idx) =>
         idx === dayIdx ? level : v
       ),
+      hasSampleResources: false,
     }));
   };
 
@@ -372,19 +402,15 @@ export function App() {
   };
 
   const handleClearSampleData = () => {
-    setState((prev) => {
-      const hadOnlySeedHabits = prev.habits.every((h) =>
-        h.id.startsWith('seed-')
-      );
-      return {
-        ...prev,
-        habits: prev.habits.filter((h) => !h.id.startsWith('seed-')),
-        resourceLevels: hadOnlySeedHabits
-          ? [null, null, null, null, null, null, null]
-          : prev.resourceLevels,
-        threeGoodThings: prev.threeGoodThings.filter((e) => !e.isSeed),
-      };
-    });
+    setState((prev) => ({
+      ...prev,
+      habits: prev.habits.filter((h) => !h.id.startsWith('seed-')),
+      resourceLevels: prev.hasSampleResources
+        ? [null, null, null, null, null, null, null]
+        : prev.resourceLevels,
+      hasSampleResources: false,
+      threeGoodThings: prev.threeGoodThings.filter((e) => !e.isSeed),
+    }));
     showToast('Учебные примеры убраны');
   };
 
@@ -397,6 +423,7 @@ export function App() {
   const trackedMethodIds = useMemo(
     () =>
       state.habits
+        .filter((h) => !h.id.startsWith('seed-'))
         .map((h) => h.methodId)
         .filter((id): id is number => typeof id === 'number'),
     [state.habits]
@@ -446,6 +473,7 @@ export function App() {
         <TrackerSection
           habits={state.habits}
           resourceLevels={state.resourceLevels}
+          hasSampleResources={Boolean(state.hasSampleResources)}
           todayIndex={state.todayIndex}
           threeGoodThings={state.threeGoodThings}
           onAddHabit={addHabitRule}
